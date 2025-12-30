@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Resume = require('../models/Resume');
 const User = require('../models/User'); // Import User for subscription checks
+const DownloadLog = require('../models/DownloadLog'); // Import DownloadLog
 const { protect } = require('../middleware/authMiddleware');
 
 // @desc    Get all resumes for the logged-in user
@@ -124,33 +125,31 @@ const DownloadLog = require('../models/DownloadLog');
 // @route   POST /api/resumes/:id/download
 router.post('/:id/download', async (req, res) => {
     try {
-        const { userId } = req.body; // user._id from frontend
+        const { userId } = req.body;
+        console.log(`Download attempt for Resume: ${req.params.id}, User: ${userId}`);
 
         let userProfile = null;
-        if (userId && userId !== 'anonymous' && userId !== 'guest') {
+        // Only attempt to find user if ID is a valid MongoDB ObjectId (24 chars hex)
+        if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
             userProfile = await User.findById(userId);
         }
 
-        // If user is logged in, check limits
         if (userProfile) {
-            // Check if subscription is expired
             const now = new Date();
             const isSubscribed = userProfile.isSubscribed && (!userProfile.subscriptionExpiry || userProfile.subscriptionExpiry > now);
 
-            // Limit: 2 free downloads if not subscribed
             if (!isSubscribed && userProfile.downloadCount >= 2) {
+                console.log(`Limit reached for user: ${userId}`);
                 return res.status(402).json({
                     message: 'Monthly download limit reached. Please upgrade to a pro plan to download more resumes.',
                     limitReached: true
                 });
             }
 
-            // Increment download count for the user
             userProfile.downloadCount += 1;
             await userProfile.save();
         }
 
-        // Log Download (PRD Req)
         await DownloadLog.create({
             uid: userId || 'anonymous',
             resumeId: req.params.id,
@@ -159,11 +158,11 @@ router.post('/:id/download', async (req, res) => {
 
         res.status(200).json({
             message: 'Download logged successfully',
-            downloadsRemaining: userProfile && !userProfile.isSubscribed ? 2 - userProfile.downloadCount : 'unlimited'
+            downloadsRemaining: userProfile && !userProfile.isSubscribed ? Math.max(0, 2 - userProfile.downloadCount) : 'unlimited'
         });
     } catch (error) {
-        console.error("Download log error:", error);
-        res.status(500).json({ message: 'Log failed' });
+        console.error("CRITICAL: Download log error details:", error);
+        res.status(500).json({ message: 'Server error while processing download. Please try again.' });
     }
 });
 
