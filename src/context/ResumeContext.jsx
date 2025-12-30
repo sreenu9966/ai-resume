@@ -67,6 +67,9 @@ export const ResumeProvider = ({ children }) => {
     // Track Resume Title
     const [resumeTitle, setResumeTitle] = useState('My Resume');
 
+    // Global Modal State
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+
     useEffect(() => {
         if (currentResumeId) {
             localStorage.setItem('currentResumeId', currentResumeId);
@@ -303,11 +306,12 @@ export const ResumeProvider = ({ children }) => {
                 }
             },
 
-            // Expose ID management
             currentResumeId,
             setCurrentResumeId,
             resumeTitle,
-            setResumeTitle
+            setResumeTitle,
+            showPaymentModal,
+            setShowPaymentModal
         }}>
             {children}
         </ResumeContext.Provider>

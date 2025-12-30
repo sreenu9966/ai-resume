@@ -55,6 +55,7 @@ const signup = async (req, res) => {
             message: "Signup successful",
             token: generateToken(newUser._id),
             user: {
+                _id: newUser._id,
                 userId: newUser.userId,
                 name: newUser.name,
                 email: newUser.email,
@@ -92,6 +93,7 @@ const login = async (req, res) => {
             message: "Login success",
             token: generateToken(user._id),
             user: {
+                _id: user._id,
                 userId: user.userId,
                 name: user.name,
                 email: user.email,

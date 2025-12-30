@@ -6,7 +6,7 @@ import { Sparkles, Loader2 } from 'lucide-react';
 import { enhanceTextWithGemini } from '../../services/gemini';
 
 export function PersonalForm() {
-    const { resumeData, updatePersonal } = useResume();
+    const { resumeData, updatePersonal, setShowPaymentModal } = useResume();
     const { personal } = resumeData;
     const [isEnhancing, setIsEnhancing] = useState(false);
 
@@ -28,6 +28,16 @@ export function PersonalForm() {
 
     const handleEnhanceSummary = async () => {
         if (!personal.summary) return;
+
+        // Subscription Check
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isSubscribed = user.isSubscribed;
+
+        if (!isSubscribed) {
+            setShowPaymentModal(true);
+            return;
+        }
+
         setIsEnhancing(true);
         try {
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -117,9 +127,23 @@ export function PersonalForm() {
                     />
                 </div>
                 <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Professional Summary
-                    </label>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-slate-300">
+                            Professional Summary
+                        </label>
+                        <button
+                            onClick={handleEnhanceSummary}
+                            disabled={isEnhancing || !personal.summary}
+                            className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
+                        >
+                            {isEnhancing ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                                <Sparkles className="w-3 h-3" />
+                            )}
+                            {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
+                        </button>
+                    </div>
                     <textarea
                         className="w-full rounded-lg glass-input px-3 py-2 text-sm h-24 resize-none text-justify"
                         name="summary"

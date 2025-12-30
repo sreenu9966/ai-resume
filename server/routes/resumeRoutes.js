@@ -119,7 +119,6 @@ router.delete('/:id', protect, async (req, res) => {
     }
 });
 
-const DownloadLog = require('../models/DownloadLog');
 
 // @desc    Log a resume download
 // @route   POST /api/resumes/:id/download
@@ -129,9 +128,15 @@ router.post('/:id/download', async (req, res) => {
         console.log(`Download attempt for Resume: ${req.params.id}, User: ${userId}`);
 
         let userProfile = null;
-        // Only attempt to find user if ID is a valid MongoDB ObjectId (24 chars hex)
-        if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
-            userProfile = await User.findById(userId);
+        if (userId) {
+            // 1. Try finding by MongoDB _id (if valid ObjectId)
+            if (/^[0-9a-fA-F]{24}$/.test(userId)) {
+                userProfile = await User.findById(userId);
+            }
+            // 2. If not found or not ObjectId, try finding by custom userId field
+            if (!userProfile) {
+                userProfile = await User.findOne({ userId: userId });
+            }
         }
 
         if (userProfile) {

@@ -7,12 +7,22 @@ import { Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { enhanceTextWithGemini } from '../../services/gemini';
 
 export function ExperienceForm() {
-  const { resumeData, addExperience, updateExperience, removeExperience } = useResume();
+  const { resumeData, addExperience, updateExperience, removeExperience, setShowPaymentModal } = useResume();
   const { experience } = resumeData;
   const [enhancingId, setEnhancingId] = useState(null);
 
   const handleEnhance = async (id, currentText) => {
     if (!currentText) return;
+
+    // Subscription Check
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isSubscribed = user.isSubscribed;
+
+    if (!isSubscribed) {
+      setShowPaymentModal(true);
+      return;
+    }
+
     setEnhancingId(id);
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;

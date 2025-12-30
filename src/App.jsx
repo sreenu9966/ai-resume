@@ -24,7 +24,11 @@ import { Toaster } from 'react-hot-toast';
 
 function ResumeBuilder() {
   const resumeRef = useRef(null);
-  const { resumeData } = useResume();
+  const {
+    resumeData, // Keep resumeData as it's used elsewhere
+    showPaymentModal,
+    setShowPaymentModal
+  } = useResume();
 
   const [showPreviewModal, setShowPreviewModal] = React.useState(false);
   const [pdfUrl, setPdfUrl] = React.useState(null);
@@ -83,7 +87,7 @@ function ResumeBuilder() {
     } catch (error) {
       if (error.response?.status === 402) {
         setShowPreviewModal(false);
-        setShowPaymentModal(true); // Open Subscription Modal
+        setShowPaymentModal(true); // Open Subscription Modal from Context
       } else {
         console.error("Download error:", error);
         alert(error.response?.data?.message || "Failed to process download");
@@ -91,7 +95,7 @@ function ResumeBuilder() {
     }
   };
 
-  const [showPaymentModal, setShowPaymentModal] = React.useState(false);
+  // Removed local showPaymentModal state
 
   return (
     <Layout onDownload={handleDownloadClick} isGenerating={isGenerating}>
@@ -108,8 +112,9 @@ function ResumeBuilder() {
       />
 
       <PaymentModal
+        isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        onSubmit={() => { }}
+        onSuccess={() => { }}
       />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </Layout>
