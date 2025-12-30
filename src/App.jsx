@@ -9,6 +9,7 @@ import { generatePDF } from './utils/generatePDF';
 import { PaymentModal } from './components/ui/PaymentModal';
 // import { AdminDashboard } from './components/ui/AdminDashboard'; // Unused
 import { PDFPreviewModal } from './components/ui/PDFPreviewModal';
+import { OfferModal } from './components/ui/OfferModal';
 import { LandingPage } from './components/landing/LandingPage';
 import RequireAuth from './components/auth/RequireAuth';
 import { AuthModal } from './components/auth/AuthModal'; // Import AuthModal
@@ -31,6 +32,7 @@ function ResumeBuilder() {
   } = useResume();
 
   const [showPreviewModal, setShowPreviewModal] = React.useState(false);
+  const [showOfferModal, setShowOfferModal] = React.useState(false);
   const [pdfUrl, setPdfUrl] = React.useState(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -54,6 +56,19 @@ function ResumeBuilder() {
       }
     };
     fetchUserStatus();
+
+    // Show Offer Popup logic
+    const timer = setTimeout(() => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const hasSeenOffer = sessionStorage.getItem('hasSeenOffer');
+
+      if (!user.isSubscribed && !hasSeenOffer && user.role !== 'guest') {
+        setShowOfferModal(true);
+        sessionStorage.setItem('hasSeenOffer', 'true');
+      }
+    }, 30000); // 30 seconds delay
+
+    return () => clearTimeout(timer);
   }, []);
   // const { currentUser } = useAuth(); // Removed
 
@@ -151,6 +166,15 @@ function ResumeBuilder() {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={() => { }}
+      />
+
+      <OfferModal
+        isOpen={showOfferModal}
+        onClose={() => setShowOfferModal(false)}
+        onApply={() => {
+          setShowOfferModal(false);
+          setShowPaymentModal(true);
+        }}
       />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </Layout>

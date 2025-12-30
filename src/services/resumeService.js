@@ -15,7 +15,9 @@ export const resumeService = {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to save resume');
+                const error = new Error(errorData.message || 'Failed to save resume');
+                error.status = response.status;
+                throw error;
             }
 
             return await response.json();
@@ -39,7 +41,9 @@ export const resumeService = {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to update resume');
+                const error = new Error(errorData.message || 'Failed to update resume');
+                error.status = response.status;
+                throw error;
             }
 
             return await response.json();

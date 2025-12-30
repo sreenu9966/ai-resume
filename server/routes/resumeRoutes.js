@@ -54,8 +54,30 @@ router.get('/:id', async (req, res) => {
 router.post('/', protect, async (req, res) => {
     const { title, data } = req.body;
     try {
+        const user = req.user;
+        const today = new Date().toISOString().split('T')[0];
+
+        // Subscription Check for Daily Saves
+        if (!user.isSubscribed) {
+            // Reset count if it's a new day
+            if (user.lastSaveDate !== today) {
+                user.dailySaveCount = 0;
+                user.lastSaveDate = today;
+            }
+
+            if (user.dailySaveCount >= 2) {
+                return res.status(402).json({
+                    message: 'Daily save limit reached. Please upgrade to Pro for unlimited saves.',
+                    code: 'LIMIT_REACHED'
+                });
+            }
+
+            user.dailySaveCount += 1;
+            await user.save();
+        }
+
         const resume = await Resume.create({
-            userId: req.user._id, // Strict Data Isolation: Force assignment to logged-in user
+            userId: user._id,
             title,
             data
         });
@@ -82,6 +104,27 @@ router.put('/:id', protect, async (req, res) => {
             // If it was a guest resume, transfer ownership to the current user
             if (resume.userId === 'guest-user') {
                 resume.userId = req.user._id;
+            }
+
+            const user = req.user;
+            const today = new Date().toISOString().split('T')[0];
+
+            // Subscription Check for Daily Saves on Update
+            if (!user.isSubscribed) {
+                if (user.lastSaveDate !== today) {
+                    user.dailySaveCount = 0;
+                    user.lastSaveDate = today;
+                }
+
+                if (user.dailySaveCount >= 2) {
+                    return res.status(402).json({
+                        message: 'Daily save limit reached. Please upgrade to Pro for unlimited saves.',
+                        code: 'LIMIT_REACHED'
+                    });
+                }
+
+                user.dailySaveCount += 1;
+                await user.save();
             }
 
             resume.title = req.body.title || resume.title;

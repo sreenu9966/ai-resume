@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    dailySaveCount: {
+        type: Number,
+        default: 0
+    },
+    lastSaveDate: {
+        type: String, // Format: YYYY-MM-DD
+        default: new Date().toISOString().split('T')[0]
+    },
     isSubscribed: {
         type: Boolean,
         default: false

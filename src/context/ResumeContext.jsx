@@ -280,14 +280,21 @@ export const ResumeProvider = ({ children }) => {
 
             // Backend Integration
             saveResumeToBackend: async (title) => {
-                console.log("Context: Saving new resume with title:", title);
-                const saved = await resumeService.saveResume(resumeData, title);
-                console.log("Context: New resume saved successfully:", saved);
-                if (saved && (saved._id || saved.id)) {
-                    const newId = saved._id || saved.id;
-                    setCurrentResumeId(newId);
+                try {
+                    console.log("Context: Saving new resume with title:", title);
+                    const saved = await resumeService.saveResume(resumeData, title);
+                    console.log("Context: New resume saved successfully:", saved);
+                    if (saved && (saved._id || saved.id)) {
+                        const newId = saved._id || saved.id;
+                        setCurrentResumeId(newId);
+                    }
+                    return saved;
+                } catch (error) {
+                    if (error.status === 402) {
+                        setShowPaymentModal(true);
+                    }
+                    throw error;
                 }
-                return saved;
             },
             updateResumeInBackend: async (resumeId, title) => {
                 console.log("Context: Updating resume ID:", resumeId, "with title:", title);
@@ -296,6 +303,9 @@ export const ResumeProvider = ({ children }) => {
                     console.log("Context: Update successful:", saved);
                     return saved;
                 } catch (error) {
+                    if (error.status === 402) {
+                        setShowPaymentModal(true);
+                    }
                     // If resume not found (deleted or invalid ID), clear the ID so next save creates a new one
                     if (error.message && (error.message.includes('not found') || error.message.includes('Not found'))) {
                         console.warn("Resume ID invalid or not found, clearing state.");
