@@ -6,6 +6,8 @@ import { resumeService } from '../../services/resumeService';
 import { useResume } from '../../context/ResumeContext';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import { API_URL } from '../../services/api';
 
 export function UserDashboard() {
     const navigate = useNavigate();
@@ -37,6 +39,22 @@ export function UserDashboard() {
 
             const parsedUser = JSON.parse(userData);
             setUser(parsedUser);
+
+            // Sync latest user status (including expiry)
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const res = await axios.get(`${API_URL}/users/profile`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.data) {
+                        setUser(res.data);
+                        localStorage.setItem('user', JSON.stringify(res.data));
+                    }
+                } catch (err) {
+                    console.error("Failed to sync user on dashboard", err);
+                }
+            }
 
             // Fetch Resumes
             try {
@@ -183,8 +201,20 @@ export function UserDashboard() {
                         </div>
                         <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
                             <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                                {user?.role === 'guest' ? 'Guest Account' : 'Pro Account'}
+                                {user?.isSubscribed ? 'Pro Account' : 'Free Account'}
                             </span>
+                            {user?.isSubscribed && user?.subscriptionExpiry && (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {(() => {
+                                        const expiry = new Date(user.subscriptionExpiry);
+                                        const now = new Date();
+                                        const diff = expiry - now;
+                                        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                        return days > 0 ? `${days} days left` : 'Expired';
+                                    })()}
+                                </span>
+                            )}
                             <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
                                 {resumes.length} Resumes Saved
                             </span>

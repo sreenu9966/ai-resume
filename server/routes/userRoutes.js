@@ -153,7 +153,8 @@ router.get('/profile', protect, async (req, res) => {
             email: user.email,
             role: user.role,
             isSubscribed: user.isSubscribed || false,
-            downloadCount: user.downloadCount || 0
+            downloadCount: user.downloadCount || 0,
+            subscriptionExpiry: user.subscriptionExpiry
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });

@@ -61,7 +61,8 @@ const signup = async (req, res) => {
                 email: newUser.email,
                 role: newUser.role,
                 isSubscribed: newUser.isSubscribed || false,
-                downloadCount: newUser.downloadCount || 0
+                downloadCount: newUser.downloadCount || 0,
+                subscriptionExpiry: newUser.subscriptionExpiry
             }
         });
     } catch (error) {
@@ -101,7 +102,8 @@ const login = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 isSubscribed: user.isSubscribed || false,
-                downloadCount: user.downloadCount || 0
+                downloadCount: user.downloadCount || 0,
+                subscriptionExpiry: user.subscriptionExpiry
             }
         });
     } catch (error) {
