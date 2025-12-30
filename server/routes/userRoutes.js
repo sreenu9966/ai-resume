@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const SubscriptionRequest = require('../models/SubscriptionRequest');
+const nodemailer = require('nodemailer');
 
 // @desc    Sync User from Firebase to MongoDB
 // @route   POST /api/users/sync
@@ -126,13 +128,76 @@ router.post('/subscribe', async (req, res) => {
         user.isSubscribed = true;
         user.subscriptionType = subType;
         user.subscriptionExpiry = expiryDate;
-
+        user.subscriptionAmount = coupon === 'RGNEW2026' ? 0 : (req.body.amount || 0);
+        user.lastActivationDate = new Date();
+        user.couponUsed = coupon || 'DIRECT';
+        user.appliedOffer = coupon === 'RGNEW2026' ? 'New Year Special Offer' : 'Standard Plan';
         await user.save();
         res.json({ message: `Successfully subscribed to ${plan} plan!`, user });
 
     } catch (error) {
         console.error("Subscription Error:", error);
         res.status(500).json({ message: 'Failed to process subscription' });
+    }
+});
+
+// @desc    Submit a manual activation request
+// @route   POST /api/users/request-activation
+router.post('/request-activation', async (req, res) => {
+    const { userId, plan, amount, userEmail, userName } = req.body;
+
+    try {
+        const newRequest = await SubscriptionRequest.create({
+            userId,
+            userEmail,
+            userName,
+            plan,
+            amount,
+            status: 'pending'
+        });
+
+        // Attempt to send Email to Admin
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER || 'ResumeGen.helpdesk@gmail.com',
+                    pass: process.env.EMAIL_PASS // User needs to set this
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER || 'ResumeGen.helpdesk@gmail.com',
+                to: 'ResumeGen.helpdesk@gmail.com',
+                subject: `New Subscription Request from ${userName}`,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #4f46e5;">New Subscription Activation Request</h2>
+                        <p><strong>User:</strong> ${userName} (${userEmail})</p>
+                        <p><strong>Plan Selected:</strong> ${plan}</p>
+                        <p><strong>Amount:</strong> ₹${amount}</p>
+                        <p><strong>Request ID:</strong> ${newRequest._id}</p>
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p style="font-size: 12px; color: #666;">Admin will activate the account after verifying the payment.</p>
+                    </div>
+                `
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log("Activation request email sent to admin.");
+        } catch (emailError) {
+            console.error("Email sending failed:", emailError.message);
+            // We don't fail the request if email fails, as it's saved in DB
+        }
+
+        res.json({
+            message: 'Request submitted! Admin will activate your account shortly.',
+            request: newRequest
+        });
+
+    } catch (error) {
+        console.error("Request Activation Error:", error);
+        res.status(500).json({ message: 'Failed to submit request' });
     }
 });
 
@@ -154,7 +219,15 @@ router.get('/profile', protect, async (req, res) => {
             role: user.role,
             isSubscribed: user.isSubscribed || false,
             downloadCount: user.downloadCount || 0,
-            subscriptionExpiry: user.subscriptionExpiry
+            dailySaveCount: user.dailySaveCount || 0,
+            lastSaveDate: user.lastSaveDate,
+            subscriptionType: user.subscriptionType,
+            subscriptionAmount: user.subscriptionAmount,
+            lastActivationDate: user.lastActivationDate || (user.isSubscribed ? user.createdAt : null),
+            couponUsed: user.couponUsed || (user.isSubscribed && user.subscriptionAmount === 0 ? 'RGNEW2026' : 'DIRECT'),
+            appliedOffer: user.appliedOffer || (user.couponUsed === 'RGNEW2026' || (user.isSubscribed && user.subscriptionAmount === 0) ? 'New Year Special Offer' : (user.isSubscribed ? 'New Year Special Offer' : 'Standard Plan')),
+            subscriptionExpiry: user.subscriptionExpiry,
+            createdAt: user.createdAt
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });

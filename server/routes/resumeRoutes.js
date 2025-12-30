@@ -9,7 +9,7 @@ const { protect } = require('../middleware/authMiddleware');
 // @route   GET /api/resumes
 router.get('/', protect, async (req, res) => {
     try {
-        const resumes = await Resume.find({ userId: req.user._id }).sort({ updatedAt: -1 });
+        const resumes = await Resume.find({ userId: req.user._id, isDeleted: { $ne: true } }).sort({ updatedAt: -1 });
         res.json(resumes);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -25,7 +25,7 @@ router.get('/user/:userId', protect, async (req, res) => {
             return res.status(401).json({ message: 'Not authorized to view these resumes' });
         }
 
-        const resumes = await Resume.find({ userId: req.params.userId }).sort({ updatedAt: -1 });
+        const resumes = await Resume.find({ userId: req.params.userId, isDeleted: { $ne: true } }).sort({ updatedAt: -1 });
         res.json(resumes);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -152,8 +152,67 @@ router.delete('/:id', protect, async (req, res) => {
                 return res.status(401).json({ message: 'Not authorized to delete this resume' });
             }
 
+            // Soft Delete
+            resume.isDeleted = true;
+            resume.deletedAt = new Date();
+            await resume.save();
+            res.json({ message: 'Resume moved to Trash' });
+        } else {
+            res.status(404).json({ message: 'Resume not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Get all trashed resumes for the logged-in user
+// @route   GET /api/resumes/trash
+router.get('/trash/history', protect, async (req, res) => {
+    try {
+        const resumes = await Resume.find({
+            userId: req.user._id,
+            isDeleted: true
+        }).sort({ deletedAt: -1 });
+        res.json(resumes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Restore a trashed resume
+// @route   POST /api/resumes/:id/restore
+router.post('/:id/restore', protect, async (req, res) => {
+    try {
+        const resume = await Resume.findById(req.params.id);
+        if (resume) {
+            if (resume.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+                return res.status(401).json({ message: 'Not authorized' });
+            }
+
+            resume.isDeleted = false;
+            resume.deletedAt = undefined;
+            await resume.save();
+            res.json({ message: 'Resume restored successfully', resume });
+        } else {
+            res.status(404).json({ message: 'Resume not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @desc    Permanently delete a resume
+// @route   DELETE /api/resumes/:id/permanent
+router.delete('/:id/permanent', protect, async (req, res) => {
+    try {
+        const resume = await Resume.findById(req.params.id);
+        if (resume) {
+            if (resume.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+                return res.status(401).json({ message: 'Not authorized' });
+            }
+
             await resume.deleteOne();
-            res.json({ message: 'Resume removed' });
+            res.json({ message: 'Resume permanently deleted' });
         } else {
             res.status(404).json({ message: 'Resume not found' });
         }

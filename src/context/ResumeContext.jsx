@@ -274,6 +274,10 @@ export const ResumeProvider = ({ children }) => {
             addAchievement,
             updateAchievement,
             removeAchievement,
+            addExtra,
+            updateExtra,
+            removeExtra,
+            updateExtrasTitle,
 
             updateFontFamily: (font) => setResumeData(prev => ({ ...prev, fontFamily: font })),
             updateFontSize: (size) => setResumeData(prev => ({ ...prev, fontSize: size })),

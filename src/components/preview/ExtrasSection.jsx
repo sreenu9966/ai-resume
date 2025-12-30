@@ -26,7 +26,7 @@ export function ExtrasSection({ isWeb }) {
                 {boldExtras.length > 0 && (
                     <div className={`flex flex-wrap gap-3 ${textColor}`}>
                         {boldExtras.map((item) => (
-                            <span key={item.id} className="font-semibold bg-gray-100 dark:bg-white/10 px-2 py-1 rounded text-sm print:bg-transparent print:p-0">
+                            <span key={item.id} className="font-bold bg-gray-100 dark:bg-white/10 px-2 py-1 rounded text-sm print:bg-transparent print:p-0" style={{ fontWeight: 700 }}>
                                 {item.text}
                             </span>
                         ))}

@@ -23,57 +23,15 @@ import { UserDashboard } from './components/user/UserDashboard'; // Imported
 import { API_URL } from './services/api';
 import { Toaster } from 'react-hot-toast';
 
-function ResumeBuilder() {
+function ResumeBuilder({ setShowAuthModal }) {
   const resumeRef = useRef(null);
-  const {
-    resumeData, // Keep resumeData as it's used elsewhere
-    showPaymentModal,
-    setShowPaymentModal
-  } = useResume();
+  const { showPaymentModal, setShowPaymentModal } = useResume();
 
   const [showPreviewModal, setShowPreviewModal] = React.useState(false);
-  const [showOfferModal, setShowOfferModal] = React.useState(false);
   const [pdfUrl, setPdfUrl] = React.useState(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
 
-  // Sync user data on mount
-  React.useEffect(() => {
-    const fetchUserStatus = async () => {
-      const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (token && user._id) {
-        try {
-          // We can use the existing GET /api/users profile or similar
-          const res = await axios.get(`${API_URL}/users/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.data) {
-            localStorage.setItem('user', JSON.stringify(res.data));
-          }
-        } catch (err) {
-          console.error("Failed to sync user status", err);
-        }
-      }
-    };
-    fetchUserStatus();
-
-    // Show Offer Popup logic
-    const timer = setTimeout(() => {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const hasSeenOffer = sessionStorage.getItem('hasSeenOffer');
-
-      if (!user.isSubscribed && !hasSeenOffer && user.role !== 'guest') {
-        setShowOfferModal(true);
-        sessionStorage.setItem('hasSeenOffer', 'true');
-      }
-    }, 30000); // 30 seconds delay
-
-    return () => clearTimeout(timer);
-  }, []);
-  // const { currentUser } = useAuth(); // Removed
-
   const handleDownloadClick = async () => {
-    // Strict Guest Check - Block Preview/Export if Guest
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -82,7 +40,6 @@ function ResumeBuilder() {
       return;
     }
 
-    // New: Check for subscription limit early
     const isSubscribed = user.isSubscribed;
     const downloadCount = user.downloadCount || 0;
 
@@ -106,8 +63,6 @@ function ResumeBuilder() {
     }
   };
 
-  const [showAuthModal, setShowAuthModal] = React.useState(false); // State for AuthModal
-
   const handleFinalDownload = async () => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -118,19 +73,16 @@ function ResumeBuilder() {
     }
 
     try {
-      // Backend Check & Log
       const resumeId = localStorage.getItem('currentResumeId') || 'new-resume';
-      const res = await axios.post(`${API_URL}/resumes/${resumeId}/download`, {
+      await axios.post(`${API_URL}/resumes/${resumeId}/download`, {
         userId: user._id || user.userId
       });
 
-      // Update local storage count to stay in sync
       if (!user.isSubscribed) {
         const updatedUser = { ...user, downloadCount: (user.downloadCount || 0) + 1 };
         localStorage.setItem('user', JSON.stringify(updatedUser));
       }
 
-      // If successful, proceed with PDF generation
       const element = resumeRef.current;
       await generatePDF(element, 'save');
       setShowPreviewModal(false);
@@ -138,15 +90,13 @@ function ResumeBuilder() {
     } catch (error) {
       if (error.response?.status === 402) {
         setShowPreviewModal(false);
-        setShowPaymentModal(true); // Open Subscription Modal from Context
+        setShowPaymentModal(true);
       } else {
         console.error("Download error:", error);
         alert(error.response?.data?.message || "Failed to process download");
       }
     }
   };
-
-  // Removed local showPaymentModal state
 
   return (
     <Layout onDownload={handleDownloadClick} isGenerating={isGenerating}>
@@ -161,12 +111,70 @@ function ResumeBuilder() {
         pdfUrl={pdfUrl}
         onDownload={handleFinalDownload}
       />
+    </Layout>
+  );
+}
 
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onSuccess={() => { }}
-      />
+function AppContent() {
+  const { showPaymentModal, setShowPaymentModal } = useResume();
+  const [showOfferModal, setShowOfferModal] = React.useState(false);
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
+
+  // Sync user data and Offer logic
+  React.useEffect(() => {
+    const fetchUserStatus = async () => {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (token && user._id) {
+        try {
+          const res = await axios.get(`${API_URL}/users/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.data) localStorage.setItem('user', JSON.stringify(res.data));
+        } catch (err) {
+          console.error("Failed to sync user status", err);
+        }
+      }
+    };
+    fetchUserStatus();
+
+    // Offer Popup Logic (LIFTED)
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = localStorage.getItem('token');
+    const isGuest = !token || token === 'guest-token' || user.role === 'guest';
+
+    if (user.isSubscribed) return;
+
+    let interval;
+    const showPopup = () => {
+      if (!showPaymentModal && !showAuthModal) {
+        setShowOfferModal(true);
+      }
+    };
+
+    // Show immediately on every mount (refresh)
+    showPopup();
+
+    if (!isGuest) {
+      // Recurring every 5 minutes for logged-in users only
+      interval = setInterval(showPopup, 5 * 60 * 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showPaymentModal, showAuthModal]);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<LandingPage />} />
+        <Route path="/login" element={<LandingPage initialOpen={true} />} />
+        <Route path="/builder" element={<ResumeBuilder setShowAuthModal={setShowAuthModal} />} />
+        <Route path="/dashboard" element={<RequireAuth><UserDashboard /></RequireAuth>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       <OfferModal
         isOpen={showOfferModal}
@@ -175,41 +183,27 @@ function ResumeBuilder() {
           setShowOfferModal(false);
           setShowPaymentModal(true);
         }}
+        onLogin={() => {
+          setShowOfferModal(false);
+          setShowAuthModal(true);
+        }}
       />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-    </Layout>
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={() => { }}
+      />
+      <Toaster position="top-right" />
+    </BrowserRouter>
   );
 }
 
 function App() {
   return (
-    // <AuthProvider>
     <ResumeProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Landing Page with Embedded Auth */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/home" element={<LandingPage />} />
-          <Route path="/login" element={<LandingPage initialOpen={true} />} />
-
-          <Route path="/builder" element={<ResumeBuilder />} />
-
-          <Route path="/dashboard" element={
-            <RequireAuth>
-              <UserDashboard />
-            </RequireAuth>
-          } />
-
-          {/* <Route path="/login" element={<Navigate to="/admin" replace />} /> */}
-
-
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" />
+      <AppContent />
     </ResumeProvider>
-    // </AuthProvider>
   );
 }
 

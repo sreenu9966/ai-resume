@@ -65,7 +65,7 @@ export function ExtrasForm() {
                                     value={extra.text}
                                     onChange={(e) => updateExtra(extra.id, e.target.value)}
                                     placeholder="Bold Item (e.g. Coding)"
-                                    className="font-semibold"
+                                    className="font-bold"
                                 />
                                 <Button
                                     variant="ghost"

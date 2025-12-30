@@ -89,7 +89,7 @@ export const resumeService = {
         }
     },
 
-    // Delete a resume
+    // Delete a resume (Soft Delete)
     deleteResume: async (resumeId) => {
         try {
             const response = await fetch(`${API_URL}/resumes/${resumeId}`, {
@@ -104,6 +104,62 @@ export const resumeService = {
             return true;
         } catch (error) {
             console.error("Error deleting resume:", error);
+            throw error;
+        }
+    },
+
+    // Get trashed resumes
+    getTrashResumes: async () => {
+        try {
+            const response = await fetch(`${API_URL}/resumes/trash/history`, {
+                headers: getHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch trash history');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error fetching trash history:", error);
+            throw error;
+        }
+    },
+
+    // Restore a resume
+    restoreResume: async (resumeId) => {
+        try {
+            const response = await fetch(`${API_URL}/resumes/${resumeId}/restore`, {
+                method: 'POST',
+                headers: getHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to restore resume');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error restoring resume:", error);
+            throw error;
+        }
+    },
+
+    // Permanent delete
+    permanentDeleteResume: async (resumeId) => {
+        try {
+            const response = await fetch(`${API_URL}/resumes/${resumeId}/permanent`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to permanently delete resume');
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Error permanently deleting resume:", error);
             throw error;
         }
     }

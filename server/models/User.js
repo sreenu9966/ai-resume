@@ -60,6 +60,19 @@ const userSchema = new mongoose.Schema({
     subscriptionExpiry: {
         type: Date
     },
+    subscriptionAmount: {
+        type: Number,
+        default: 0
+    },
+    lastActivationDate: {
+        type: Date
+    },
+    couponUsed: {
+        type: String
+    },
+    appliedOffer: {
+        type: String
+    },
     createdAt: {
         type: Date,
         default: Date.now
