@@ -136,4 +136,28 @@ router.post('/subscribe', async (req, res) => {
     }
 });
 
+const { protect } = require('../middleware/authMiddleware');
+
+// @desc    Get current user profile
+// @route   GET /api/users/profile
+router.get('/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Return standard user object for frontend sync
+        res.json({
+            _id: user._id,
+            userId: user.userId,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isSubscribed: user.isSubscribed || false,
+            downloadCount: user.downloadCount || 0
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

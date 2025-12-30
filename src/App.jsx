@@ -34,6 +34,27 @@ function ResumeBuilder() {
   const [pdfUrl, setPdfUrl] = React.useState(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
 
+  // Sync user data on mount
+  React.useEffect(() => {
+    const fetchUserStatus = async () => {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (token && user._id) {
+        try {
+          // We can use the existing GET /api/users profile or similar
+          const res = await axios.get(`${API_URL}/users/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.data) {
+            localStorage.setItem('user', JSON.stringify(res.data));
+          }
+        } catch (err) {
+          console.error("Failed to sync user status", err);
+        }
+      }
+    };
+    fetchUserStatus();
+  }, []);
   // const { currentUser } = useAuth(); // Removed
 
   const handleDownloadClick = async () => {
@@ -43,6 +64,15 @@ function ResumeBuilder() {
 
     if (!token || token === 'guest-token' || user.role === 'guest') {
       setShowAuthModal(true);
+      return;
+    }
+
+    // New: Check for subscription limit early
+    const isSubscribed = user.isSubscribed;
+    const downloadCount = user.downloadCount || 0;
+
+    if (!isSubscribed && downloadCount >= 2) {
+      setShowPaymentModal(true);
       return;
     }
 
@@ -78,6 +108,12 @@ function ResumeBuilder() {
       const res = await axios.post(`${API_URL}/resumes/${resumeId}/download`, {
         userId: user._id || user.userId
       });
+
+      // Update local storage count to stay in sync
+      if (!user.isSubscribed) {
+        const updatedUser = { ...user, downloadCount: (user.downloadCount || 0) + 1 };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
 
       // If successful, proceed with PDF generation
       const element = resumeRef.current;

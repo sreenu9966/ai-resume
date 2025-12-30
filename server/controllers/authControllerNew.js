@@ -59,7 +59,9 @@ const signup = async (req, res) => {
                 userId: newUser.userId,
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                isSubscribed: newUser.isSubscribed || false,
+                downloadCount: newUser.downloadCount || 0
             }
         });
     } catch (error) {
@@ -97,7 +99,9 @@ const login = async (req, res) => {
                 userId: user.userId,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                isSubscribed: user.isSubscribed || false,
+                downloadCount: user.downloadCount || 0
             }
         });
     } catch (error) {
