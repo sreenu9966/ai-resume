@@ -1,0 +1,137 @@
+/* ===== RESET ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== MAIN CONTAINER ===== */
+.resume-container {
+  display: flex;
+  height: 100vh;
+  padding: 10px;            /* 🔥 whole page padding */
+  gap: 10px;
+  background: #f1f3f6;
+}
+
+/* ===== LEFT SIDE : RESUME EDITOR (25%) ===== */
+.resume-left {
+  width: 25%;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px;
+  overflow-y: auto;         /* scroll for editor */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Editor headings */
+.resume-left h3,
+.resume-left h4 {
+  margin: 10px 0;
+  color: #03045e;
+}
+
+/* Editor inputs */
+.resume-left input,
+.resume-left textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.resume-left textarea {
+  resize: vertical;
+}
+
+.resume-left input:focus,
+.resume-left textarea:focus {
+  outline: none;
+  border-color: #0077b6;
+}
+
+/* Editor buttons */
+.resume-left button {
+  padding: 8px;
+  margin-top: 6px;
+  width: 100%;
+  background: #0077b6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.resume-left button:hover {
+  background: #023e8a;
+}
+
+/* ===== RIGHT SIDE : RESUME PREVIEW (75%) ===== */
+.resume-right {
+  width: 75%;
+  background: #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;   /* center A4 page */
+}
+
+/* ===== RESUME PAGE (A4 LOOK) ===== */
+.resume-right > div {
+  background: #ffffff;
+  width: 210mm;             /* A4 width */
+  min-height: 297mm;        /* A4 height */
+  padding: 30px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Resume preview text */
+.resume-right h2 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.resume-right h4 {
+  margin-top: 16px;
+  margin-bottom: 6px;
+  color: #023e8a;
+}
+
+.resume-right p,
+.resume-right li {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Lists */
+.resume-right ul {
+  padding-left: 18px;
+}
+
+/* Divider */
+.resume-right hr {
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid #ccc;
+}
+
+/* ===== RESPONSIVE (MOBILE) ===== */
+@media (max-width: 900px) {
+  .resume-container {
+    flex-direction: column;
+  }
+
+  .resume-left,
+  .resume-right {
+    width: 100%;
+  }
+
+  .resume-right > div {
+    width: 100%;
+    min-height: auto;
+  }
+}
