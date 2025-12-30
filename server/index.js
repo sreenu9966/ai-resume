@@ -18,9 +18,17 @@ app.use(cors({
             'http://localhost:5175',
             'http://localhost:5176'
         ];
-        if (!origin || allowedOrigins.includes(origin)) {
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Allow if FRONTEND_URL is set to * (Wildcard)
+        if (process.env.FRONTEND_URL === '*') return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.log('Blocked by CORS:', origin); // Log the blocked origin for debugging
             callback(new Error('Not allowed by CORS'));
         }
     },
