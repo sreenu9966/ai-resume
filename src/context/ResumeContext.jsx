@@ -4,25 +4,81 @@ import { resumeService } from '../services/resumeService';
 
 const initialResumeState = {
     personal: {
-        fullName: '',
-        email: '',
-        phone: '',
-        role: '',
-        summary: '',
-        location: '',
-        photo: null,
+        fullName: 'Priya Rao',
+        email: 'priya.rao@resumegemini.com',
+        phone: '+1 (555) 555-555',
+        role: 'Software Development Manager',
+        summary: 'Highly motivated and result-oriented Software Development Manager with over 10 years of experience in the full software development lifecycle (SDLC). Proven track record of designing and building highly scalable, secure, and performant software systems. Passionate about leading and mentoring high-performing development teams to deliver innovative and high-quality software solutions that consistently exceed business objectives.',
+        location: 'Bengaluru, KA, 560001',
+        photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=500',
     },
-    education: [],
-    experience: [],
-    projects: [],
-    achievements: [],
-    extras: [],
-    extrasTitle: 'Activities',
-    skills: [],
+    education: [
+        {
+            id: '1',
+            school: 'Rhode Island School of Design',
+            degree: 'BFA in Graphic Design',
+            year: '2023 - 2024',
+            description: 'Graduated Magna Cum Laude. President of the Design & Tech Association.'
+        }
+    ],
+    experience: [
+        {
+            id: '1',
+            company: 'Tech Innovations Labs',
+            role: 'Product Manager',
+            date: '2024 - Present',
+            description: '• Spearheaded the redesign of the core flagship product, resulting in a 25% increase in user retention.\n• Managed a team of 5 designers, establishing a new design system used across 3 interconnected products.\n• Collaborated closely with engineering and product management to define product roadmap and vision.'
+        },
+        {
+            id: '2',
+            company: 'Digital Solutions Corp',
+            role: 'Senior Developer',
+            date: '2021 - 2024',
+            description: '• Designed and launched mobile-first interfaces for fintech applications.\n• Conducted user research and usability testing sessions to validate design concepts.\n• Reduced customer support tickets by 15% through intuitive UI improvements.'
+        }
+    ],
+    projects: [
+        {
+            id: '1',
+            name: 'Analytics Dashboard',
+            link: '#',
+            date: '2023',
+            description: 'Complete overhaul of an analytics dashboard for e-commerce merchants. Focused on data visualization and accessibility.'
+        },
+        {
+            id: '2',
+            name: 'Fitness Tracking App',
+            link: '#',
+            date: '2022',
+            description: 'Concept to launch design for a fitness tracking application. Featured in "Best of App Design 2022".'
+        }
+    ],
+    achievements: [
+        { id: '1', title: "CEO's Choice Award, 2023", description: '' },
+        { id: '2', title: 'Excellence in Customer Partnership Award, 2021', description: '' },
+        { id: '3', title: 'Growth Mindset Pioneer Award, 2017', description: '' }
+    ],
+    extras: [
+        { id: '1', text: 'English', type: 'languages' },
+        { id: '2', text: 'Telugu', type: 'languages' },
+        { id: '3', text: 'Hindi', type: 'languages' }
+    ],
+    extrasTitle: 'Languages',
+    skills: [
+        'Java', 'Python', 'HTML', 'CSS', 'JavaScript', 'React'
+    ],
     themeColor: '#2563eb', // blue-600
     theme: 'modern',
     fontFamily: 'font-sans',
     fontSize: 'text-base',
+};
+
+// Helper to generate IDs safely (works on mobile/http)
+const generateId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
 const ResumeContext = createContext();
@@ -38,7 +94,26 @@ export const useResume = () => {
 export const ResumeProvider = ({ children }) => {
     const [resumeData, setResumeData] = useState(() => {
         const saved = localStorage.getItem('resumeData');
-        return saved ? JSON.parse(saved) : initialResumeState;
+        if (!saved) return initialResumeState;
+
+        try {
+            const parsed = JSON.parse(saved);
+            // Deep merge with initial state to ensure all fields exist
+            return {
+                ...initialResumeState,
+                ...parsed,
+                personal: { ...initialResumeState.personal, ...parsed.personal },
+                education: parsed.education || initialResumeState.education,
+                experience: parsed.experience || initialResumeState.experience,
+                projects: parsed.projects || initialResumeState.projects,
+                achievements: parsed.achievements || initialResumeState.achievements,
+                extras: parsed.extras || initialResumeState.extras,
+                skills: parsed.skills || initialResumeState.skills,
+            };
+        } catch (e) {
+            console.error("Failed to parse resume data", e);
+            return initialResumeState;
+        }
     });
 
     const [sectionOrder, setSectionOrder] = useState(() => {
@@ -69,6 +144,7 @@ export const ResumeProvider = ({ children }) => {
 
     // Global Modal State
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         if (currentResumeId) {
@@ -96,7 +172,7 @@ export const ResumeProvider = ({ children }) => {
     const addEducation = () => {
         setResumeData(prev => ({
             ...prev,
-            education: [...prev.education, { id: crypto.randomUUID(), school: '', degree: '', year: '', description: '' }]
+            education: [...prev.education, { id: generateId(), school: '', degree: '', year: '', description: '' }]
         }));
     };
 
@@ -117,7 +193,7 @@ export const ResumeProvider = ({ children }) => {
     const addExperience = () => {
         setResumeData(prev => ({
             ...prev,
-            experience: [...prev.experience, { id: crypto.randomUUID(), description: '' }]
+            experience: [...prev.experience, { id: generateId(), description: '' }]
         }));
     };
 
@@ -162,7 +238,7 @@ export const ResumeProvider = ({ children }) => {
     const addProject = () => {
         setResumeData(prev => ({
             ...prev,
-            projects: [...(prev.projects || []), { id: crypto.randomUUID(), name: '', link: '', date: '', description: '' }]
+            projects: [...(prev.projects || []), { id: generateId(), name: '', link: '', date: '', description: '' }]
         }));
     };
 
@@ -183,7 +259,7 @@ export const ResumeProvider = ({ children }) => {
     const addAchievement = () => {
         setResumeData(prev => ({
             ...prev,
-            achievements: [...(prev.achievements || []), { id: crypto.randomUUID(), title: '' }]
+            achievements: [...(prev.achievements || []), { id: generateId(), title: '' }]
         }));
     };
 
@@ -204,7 +280,7 @@ export const ResumeProvider = ({ children }) => {
     const addExtra = (type = 'normal') => {
         setResumeData(prev => ({
             ...prev,
-            extras: [...(prev.extras || []), { id: crypto.randomUUID(), text: '', type }]
+            extras: [...(prev.extras || []), { id: generateId(), text: '', type }]
         }));
     };
 
@@ -243,11 +319,11 @@ export const ResumeProvider = ({ children }) => {
             ...prev,
             ...newData,
             // Ensure ID generation for arrays if missing (fallback)
-            education: newData.education?.map(e => ({ ...e, id: e.id || crypto.randomUUID() })) || [],
-            experience: newData.experience?.map(e => ({ ...e, id: e.id || crypto.randomUUID() })) || [],
-            projects: newData.projects?.map(e => ({ ...e, id: e.id || crypto.randomUUID() })) || [],
-            achievements: newData.achievements?.map(e => ({ ...e, id: e.id || crypto.randomUUID() })) || [],
-            extras: newData.extras?.map(e => ({ ...e, id: e.id || crypto.randomUUID() })) || [],
+            education: newData.education?.map(e => ({ ...e, id: e.id || generateId() })) || [],
+            experience: newData.experience?.map(e => ({ ...e, id: e.id || generateId() })) || [],
+            projects: newData.projects?.map(e => ({ ...e, id: e.id || generateId() })) || [],
+            achievements: newData.achievements?.map(e => ({ ...e, id: e.id || generateId() })) || [],
+            extras: newData.extras?.map(e => ({ ...e, id: e.id || generateId() })) || [],
         }));
     };
 
@@ -325,7 +401,9 @@ export const ResumeProvider = ({ children }) => {
             resumeTitle,
             setResumeTitle,
             showPaymentModal,
-            setShowPaymentModal
+            setShowPaymentModal,
+            isGenerating,
+            setIsGenerating
         }}>
             {children}
         </ResumeContext.Provider>

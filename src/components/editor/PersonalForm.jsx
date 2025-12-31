@@ -7,7 +7,7 @@ import { enhanceTextWithGemini } from '../../services/gemini';
 
 export function PersonalForm() {
     const { resumeData, updatePersonal, setShowPaymentModal } = useResume();
-    const { personal } = resumeData;
+    const { personal = {} } = resumeData || {};
     const [isEnhancing, setIsEnhancing] = useState(false);
 
     const handleChange = (e) => {

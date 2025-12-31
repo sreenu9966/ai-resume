@@ -16,6 +16,78 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// @desc    Get dummy resume data
+// @route   GET /api/resumes/dummy-data
+router.get('/dummy-data', async (req, res) => {
+    const dummyData = {
+        personal: {
+            fullName: 'Priya Rao',
+            email: 'priya.rao@resumegemini.com',
+            phone: '+1 (555) 555-555',
+            role: 'Software Development Manager',
+            summary: 'Highly motivated and result-oriented Software Development Manager with over 10 years of experience in the full software development lifecycle (SDLC). Proven track record of designing and building highly scalable, secure, and performant software systems. Passionate about leading and mentoring high-performing development teams to deliver innovative and high-quality software solutions that consistently exceed business objectives.',
+            location: 'Bengaluru, KA, 560001',
+            photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=500',
+        },
+        education: [
+            {
+                id: '1',
+                school: 'Rhode Island School of Design',
+                degree: 'BFA in Graphic Design',
+                year: '2023 - 2024',
+                description: 'Graduated Magna Cum Laude. President of the Design & Tech Association.'
+            }
+        ],
+        experience: [
+            {
+                id: '1',
+                company: 'Tech Innovations Labs',
+                role: 'Product Manager',
+                date: '2024 - Present',
+                description: '• Spearheaded the redesign of the core flagship product, resulting in a 25% increase in user retention.\n• Managed a team of 5 designers, establishing a new design system used across 3 interconnected products.\n• Collaborated closely with engineering and product management to define product roadmap and vision.'
+            },
+            {
+                id: '2',
+                company: 'Digital Solutions Corp',
+                role: 'Senior Developer',
+                date: '2021 - 2024',
+                description: '• Designed and launched mobile-first interfaces for fintech applications.\n• Conducted user research and usability testing sessions to validate design concepts.\n• Reduced customer support tickets by 15% through intuitive UI improvements.'
+            }
+        ],
+        projects: [
+            {
+                id: '1',
+                name: 'Analytics Dashboard',
+                link: '#',
+                date: '2023',
+                description: 'Complete overhaul of an analytics dashboard for e-commerce merchants. Focused on data visualization and accessibility.'
+            },
+            {
+                id: '2',
+                name: 'Fitness Tracking App',
+                link: '#',
+                date: '2022',
+                description: 'Concept to launch design for a fitness tracking application. Featured in "Best of App Design 2022".'
+            }
+        ],
+        achievements: [
+            { id: '1', title: "CEO's Choice Award, 2023", description: '' },
+            { id: '2', title: 'Excellence in Customer Partnership Award, 2021', description: '' },
+            { id: '3', title: 'Growth Mindset Pioneer Award, 2017', description: '' }
+        ],
+        extras: [
+            { id: '1', text: 'English', type: 'languages' },
+            { id: '2', text: 'Telugu', type: 'languages' },
+            { id: '3', text: 'Hindi', type: 'languages' }
+        ],
+        extrasTitle: 'Languages',
+        skills: [
+            'Java', 'Python', 'HTML', 'CSS', 'JavaScript', 'React'
+        ]
+    };
+    res.json(dummyData);
+});
+
 // @desc    Get all resumes for a specific user (Admin only or specific check)
 // @route   GET /api/resumes/user/:userId
 router.get('/user/:userId', protect, async (req, res) => {

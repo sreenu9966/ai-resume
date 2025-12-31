@@ -8,6 +8,8 @@ import { ConfirmationModal } from '../ui/ConfirmationModal';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { API_URL } from '../../services/api';
+import { FeedbackButton } from '../common/FeedbackButton';
+import { Loader } from '../ui/Loader';
 
 export function UserDashboard() {
     const navigate = useNavigate();
@@ -42,6 +44,53 @@ export function UserDashboard() {
             const parsedUser = JSON.parse(userData);
             setUser(parsedUser);
 
+            // Security Logging (Once per browser session)
+            const hasLoggedSession = sessionStorage.getItem('hasLoggedSession');
+            if (!hasLoggedSession && parsedUser) {
+                const captureSession = async () => {
+                    try {
+                        let locationData = null;
+
+                        // Try to get geolocation
+                        if ("geolocation" in navigator) {
+                            try {
+                                const pos = await new Promise((resolve, reject) => {
+                                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                        enableHighAccuracy: true,
+                                        timeout: 5000,
+                                        maximumAge: 0
+                                    });
+                                });
+                                locationData = {
+                                    lat: pos.coords.latitude,
+                                    lng: pos.coords.longitude,
+                                    accuracy: pos.coords.accuracy
+                                };
+                            } catch (locErr) {
+                                console.warn("Geolocation permission denied or timed out", locErr);
+                            }
+                        }
+
+                        // Basic Device Info
+                        const ua = navigator.userAgent;
+                        const deviceProps = {
+                            userId: parsedUser.userId || parsedUser._id,
+                            userAgent: ua,
+                            location: locationData,
+                            browser: /chrome|crios|crmo/i.test(ua) ? 'Chrome' : /firefox|iceweasel|fxios/i.test(ua) ? 'Firefox' : /safari/i.test(ua) && !/chrome|crios|crmo/i.test(ua) ? 'Safari' : /opr\//i.test(ua) ? 'Opera' : /edg/i.test(ua) ? 'Edge' : 'Unknown',
+                            os: /windows/i.test(ua) ? 'Windows' : /macintosh|mac os x/i.test(ua) ? 'MacOS' : /android/i.test(ua) ? 'Android' : /iphone|ipad|ipod/i.test(ua) ? 'iOS' : /linux/i.test(ua) ? 'Linux' : 'Unknown',
+                            deviceType: /mobile|tablet|android|iphone|ipad/i.test(ua) ? 'Mobile' : 'Desktop'
+                        };
+
+                        await axios.post(`${API_URL}/auth/log-session`, deviceProps);
+                        sessionStorage.setItem('hasLoggedSession', 'true');
+                    } catch (err) {
+                        console.error("Failed to log security session", err);
+                    }
+                };
+                captureSession();
+            }
+
             // Sync latest user status (including expiry)
             const token = localStorage.getItem('token');
             if (token) {
@@ -58,15 +107,19 @@ export function UserDashboard() {
                 }
             }
 
-            // Fetch Resumes
+            // Fetch Resumes with 3-second Delay
             try {
+                setLoading(true);
+                const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
+
+                let fetchPromise;
                 if (activeTab === 'active') {
-                    const fetchedResumes = await resumeService.getUserResumes();
-                    setResumes(fetchedResumes);
+                    fetchPromise = resumeService.getUserResumes().then(data => setResumes(data));
                 } else {
-                    const fetchedTrash = await resumeService.getTrashResumes();
-                    setTrashResumes(fetchedTrash);
+                    fetchPromise = resumeService.getTrashResumes().then(data => setTrashResumes(data));
                 }
+
+                await Promise.all([fetchPromise, minDelay]);
             } catch (error) {
                 console.error("Failed to load resumes", error);
             } finally {
@@ -87,9 +140,7 @@ export function UserDashboard() {
         localStorage.removeItem('user');
         localStorage.removeItem('currentResumeId'); // Clear resume edit state
         setUser(null);
-        navigate('/');
-        window.dispatchEvent(new Event('auth-change'));
-        toast.success('Logged out successfully');
+        window.location.href = '/'; // Reloads the page and goes to home
     };
 
     const handleEdit = (resume) => {
@@ -176,7 +227,7 @@ export function UserDashboard() {
     }, [resumes]);
 
 
-    if (loading) return <div className="min-h-screen pt-24 flex justify-center text-white">Loading...</div>;
+    if (loading) return <Loader text="Loading Dashboard..." />;
 
     return (
         <div className="min-h-screen pt-24 px-4 bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
@@ -628,6 +679,7 @@ export function UserDashboard() {
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDelete}
             />
+            <FeedbackButton />
         </div >
     );
 }

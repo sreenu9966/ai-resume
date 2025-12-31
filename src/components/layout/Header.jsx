@@ -60,8 +60,8 @@ export function Header({ onDownload, isGenerating }) {
         localStorage.removeItem('currentResumeId'); // Clear resume edit state
         setUser(null);
         setShowDropdown(false);
-        navigate('/');
         window.dispatchEvent(new Event('auth-change'));
+        window.location.href = '/'; // Reloads the page
     };
 
     return (
@@ -74,7 +74,7 @@ export function Header({ onDownload, isGenerating }) {
                 </Link>
 
                 {/* Editable Title */}
-                <div className="flex-1 max-w-md">
+                <div className="flex-1 max-w-md hidden lg:block">
                     <ResumeTitleInput />
                 </div>
 
@@ -139,12 +139,12 @@ export function Header({ onDownload, isGenerating }) {
                         {isGenerating ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-b-white rounded-full animate-spin" />
-                                Processing...
+                                <span className="hidden md:inline">Processing...</span>
                             </>
                         ) : (
                             <>
                                 <Download className="w-4 h-4" />
-                                Export Portfolio
+                                <span className="hidden md:inline">Export Portfolio</span>
                             </>
                         )}
                     </Button>
@@ -212,15 +212,20 @@ function SaveButton() {
     return (
         <>
             <Button onClick={handleSaveClick} variant="outline" size="sm" disabled={saving || savedSuccess} className={`gap-2 ${savedSuccess ? 'border-green-500 text-green-500 hover:text-green-500 hover:bg-green-500/10' : ''}`}>
-                {saving ? 'Saving...' : savedSuccess ? (
+                {saving ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-current border-b-transparent rounded-full animate-spin" />
+                        <span className="hidden md:inline">Saving...</span>
+                    </>
+                ) : savedSuccess ? (
                     <>
                         <Check className="w-4 h-4" />
-                        Saved!
+                        <span className="hidden md:inline">Saved!</span>
                     </>
                 ) : (
                     <>
                         <Save className="w-4 h-4" />
-                        {currentResumeId ? 'Update' : 'Save'}
+                        <span className="hidden md:inline">{currentResumeId ? 'Update' : 'Save'}</span>
                     </>
                 )}
             </Button>

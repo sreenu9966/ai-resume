@@ -11,7 +11,7 @@ export function Footer() {
                             <div className="p-2 rounded-xl bg-indigo-500/20">
                                 <FileText className="w-6 h-6 text-indigo-400" />
                             </div>
-                            <span className="text-xl font-bold text-slate-100">ResumeAI</span>
+                            <span className="text-xl font-bold text-slate-100">ResumeGen</span>
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed">
                             Building professional, ATS-friendly resumes has never been easier.
@@ -49,7 +49,7 @@ export function Footer() {
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-slate-500 text-center md:text-left">
-                        © 2024 ResumeAI. All rights reserved.
+                        © 2024 ResumeGen. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6">
                         <a href="#" className="text-slate-400 hover:text-indigo-400 transition-colors"><Twitter className="w-5 h-5" /></a>

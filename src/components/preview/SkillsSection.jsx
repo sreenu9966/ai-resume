@@ -17,6 +17,7 @@ export function SkillsSection({ isWeb }) {
             </h3>
             <div className="space-y-2">
                 {skills.map((skillLine, index) => {
+                    if (typeof skillLine !== 'string') return null;
                     const colonIndex = skillLine.indexOf(':');
                     if (colonIndex !== -1) {
                         const label = skillLine.substring(0, colonIndex + 1);

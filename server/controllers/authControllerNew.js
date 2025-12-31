@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const LoginLog = require('../models/LoginLog');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -125,4 +126,30 @@ const forgotUser = async (req, res) => {
     }
 };
 
-module.exports = { signup, login, forgotUser };
+const logSession = async (req, res) => {
+    const { userId, userAgent, location, deviceType, browser, os } = req.body;
+    try {
+        const newLog = new LoginLog({
+            userId,
+            ip: req.ip || req.headers['x-forwarded-for'],
+            userAgent,
+            deviceType,
+            browser,
+            os,
+            location: {
+                lat: location?.lat,
+                lng: location?.lng,
+                accuracy: location?.accuracy,
+                timestamp: new Date()
+            }
+        });
+
+        await newLog.save();
+        res.status(200).json({ message: "Session logged successfully" });
+    } catch (error) {
+        console.error("Session logging error:", error);
+        res.status(500).json({ message: "Error logging session" });
+    }
+};
+
+module.exports = { signup, login, forgotUser, logSession };

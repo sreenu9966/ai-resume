@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import axios from 'axios';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ResumeProvider, useResume } from './context/ResumeContext';
+import { Loader } from './components/ui/Loader';
 import { Layout } from './components/layout/Layout';
 import { Editor } from './components/editor/Editor';
 import { Preview } from './components/preview/Preview';
@@ -23,13 +24,15 @@ import { UserDashboard } from './components/user/UserDashboard'; // Imported
 import { API_URL } from './services/api';
 import { Toaster } from 'react-hot-toast';
 
+import { SEO } from './components/common/SEO';
+
 function ResumeBuilder({ setShowAuthModal }) {
   const resumeRef = useRef(null);
-  const { showPaymentModal, setShowPaymentModal } = useResume();
+  const { showPaymentModal, setShowPaymentModal, isGenerating, setIsGenerating } = useResume();
 
   const [showPreviewModal, setShowPreviewModal] = React.useState(false);
   const [pdfUrl, setPdfUrl] = React.useState(null);
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  // Removed local isGenerating state
 
   const handleDownloadClick = async () => {
     const token = localStorage.getItem('token');
@@ -49,6 +52,9 @@ function ResumeBuilder({ setShowAuthModal }) {
     }
 
     setIsGenerating(true);
+    // Wait for state to propagate (render cycle) before capturing
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       const element = resumeRef.current;
       const blob = await generatePDF(element, 'preview');
@@ -99,10 +105,15 @@ function ResumeBuilder({ setShowAuthModal }) {
   };
 
   return (
-    <Layout onDownload={handleDownloadClick} isGenerating={isGenerating}>
-      <div className="grid lg:grid-cols-2 gap-8 items-start h-[calc(100vh-8.5rem)]">
-        <Editor />
-        <Preview resumeRef={resumeRef} />
+    <Layout onDownload={handleDownloadClick} isGenerating={isGenerating} fullHeight={true}>
+      <SEO title="Editor" description="Edit your resume with real-time preview." />
+      <div className="grid gap-8 grid-cols-1 lg:grid-cols-[30%_70%]">
+        <div className="lg:sticky lg:top-24 lg:h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar">
+          <Editor />
+        </div>
+        <div className="min-w-0 overflow-x-auto lg:overflow-visible">
+          <Preview resumeRef={resumeRef} isGenerating={isGenerating} />
+        </div>
       </div>
 
       <PDFPreviewModal
@@ -145,7 +156,7 @@ function AppContent() {
 
     if (user.isSubscribed) return;
 
-    let interval;
+    // Offer Popup Logic
     const showPopup = () => {
       if (!showPaymentModal && !showAuthModal) {
         setShowOfferModal(true);
@@ -155,6 +166,7 @@ function AppContent() {
     // Show immediately on every mount (refresh)
     showPopup();
 
+    let interval;
     if (!isGuest) {
       // Recurring every 5 minutes for logged-in users only
       interval = setInterval(showPopup, 5 * 60 * 1000);
@@ -166,7 +178,7 @@ function AppContent() {
   }, [showPaymentModal, showAuthModal]);
 
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/home" element={<LandingPage />} />
@@ -195,15 +207,21 @@ function AppContent() {
         onSuccess={() => { }}
       />
       <Toaster position="top-right" />
-    </BrowserRouter>
+    </>
   );
 }
 
+import { HelmetProvider } from 'react-helmet-async';
+
 function App() {
   return (
-    <ResumeProvider>
-      <AppContent />
-    </ResumeProvider>
+    <HelmetProvider>
+      <BrowserRouter>
+        <ResumeProvider>
+          <AppContent />
+        </ResumeProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 

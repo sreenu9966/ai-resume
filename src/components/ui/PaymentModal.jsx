@@ -51,10 +51,8 @@ export function PaymentModal({ isOpen, onClose, onSuccess }) {
                 setIsLoading(false);
             }
         } else {
-            // Redirect to Google Forms for paid plans
-            window.open('https://forms.gle/ifAKYswGigrFPKN16', '_blank');
-            toast.success("Opening registration form...");
-            onClose(); // Close modal after redirection
+            // Switch to Request Activation Step instead of Google Form
+            setStep('request');
         }
     };
 

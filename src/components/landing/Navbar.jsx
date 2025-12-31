@@ -61,9 +61,9 @@ export function Navbar({ onOpenAuth }) {
         localStorage.removeItem('user');
         setUser(null);
         setShowDropdown(false);
-        navigate('/');
         // Force re-render of other components if needed
         window.dispatchEvent(new Event('auth-change'));
+        window.location.href = '/'; // Reloads application
     };
 
     // const handleLogout = async () => {
@@ -88,9 +88,10 @@ export function Navbar({ onOpenAuth }) {
                     <div className="p-2 rounded-xl bg-indigo-500/20 group-hover:bg-indigo-500/30 transition-colors">
                         <FileText className="w-6 h-6 text-indigo-400" />
                     </div>
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
-                        ResumeAI
-                    </span>
+                    <div className="text-xl font-bold">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">Resume</span>
+                        <span className="text-white">Gen</span>
+                    </div>
                 </Link>
 
                 <div className="hidden md:flex items-center gap-8">
@@ -110,11 +111,11 @@ export function Navbar({ onOpenAuth }) {
                                 <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
                                     {user.name ? user.name.charAt(0).toUpperCase() : 'G'}
                                 </div>
-                                <span className="text-sm font-medium text-slate-200">{user.name || 'Guest'}</span>
+                                <span className="text-sm font-medium text-slate-200 hidden md:inline">{user.name || 'Guest'}</span>
                                 <ChevronDown className="w-4 h-4 text-slate-400" />
                             </button>
 
-                            {/* Dropdown Menu */}
+                            {/* Dropdown Menu - same as before */}
                             {showDropdown && (
                                 <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 z-50">
                                     <div className="px-4 py-3 border-b border-white/5">
@@ -160,9 +161,9 @@ export function Navbar({ onOpenAuth }) {
                                 onOpenAuth();
                             }
                         }}
-                        className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors shadow-lg shadow-indigo-500/25"
+                        className="hidden md:flex px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors shadow-lg shadow-indigo-500/25 items-center gap-2"
                     >
-                        Create Resume
+                        <span className="inline">Create Resume</span>
                     </button>
                 </div>
             </div>
