@@ -1,5 +1,31 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useResume } from '../../context/ResumeContext';
+
+import modernTemplate from '../../assets/templates/modern.png';
+import minimalTemplate from '../../assets/templates/minimal.png';
+import creativeTemplate from '../../assets/templates/creative.png';
+
+const templates = [
+    {
+        name: "Modern",
+        image: modernTemplate,
+        description: "Clean and professional, perfect for tech and corporate roles."
+    },
+    {
+        name: "Minimal",
+        image: minimalTemplate,
+        description: "Simple and elegant, focusing purely on your content."
+    },
+    {
+        name: "Creative",
+        image: creativeTemplate,
+        description: "Unique and artistic, designed to stand out from the crowd."
+    }
+];
+
 export function ResumeModels() {
     const navigate = useNavigate();
     const { updateTheme, fillSampleData } = useResume();
