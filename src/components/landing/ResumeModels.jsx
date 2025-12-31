@@ -1,30 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
-
-import modernTemplate from '../../assets/templates/modern.png';
-import minimalTemplate from '../../assets/templates/minimal.png';
-import creativeTemplate from '../../assets/templates/creative.png';
-
-const templates = [
-    {
-        name: "Modern",
-        image: modernTemplate,
-        description: "Clean and professional, perfect for tech and corporate roles."
-    },
-    {
-        name: "Minimal",
-        image: minimalTemplate,
-        description: "Simple and elegant, focusing purely on your content."
-    },
-    {
-        name: "Creative",
-        image: creativeTemplate,
-        description: "Unique and artistic, designed to stand out from the crowd."
-    }
-];
-
 export function ResumeModels() {
+    const navigate = useNavigate();
+    const { updateTheme, fillSampleData } = useResume();
+
+    const handleUseTemplate = (themeId) => {
+        updateTheme(themeId.toLowerCase());
+        fillSampleData();
+        navigate('/builder');
+        window.scrollTo(0, 0);
+    };
+
     return (
         <section id="templates" className="py-24">
             <div className="container mx-auto px-4">
@@ -55,7 +41,10 @@ export function ResumeModels() {
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
                                 <h3 className="text-2xl font-bold text-white mb-2">{template.name}</h3>
                                 <p className="text-slate-300 mb-6">{template.description}</p>
-                                <button className="px-6 py-2 bg-white text-black font-semibold rounded-full flex items-center gap-2 hover:bg-slate-200 transition-colors">
+                                <button
+                                    onClick={() => handleUseTemplate(template.name)}
+                                    className="px-6 py-2 bg-white text-black font-semibold rounded-full flex items-center gap-2 hover:bg-slate-200 transition-colors"
+                                >
                                     Use Template <ArrowUpRight className="w-4 h-4" />
                                 </button>
                             </div>

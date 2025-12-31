@@ -2,7 +2,7 @@ import { DessertIcon } from 'lucide-react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { resumeService } from '../services/resumeService';
 
-const initialResumeState = {
+const sampleResumeData = {
     personal: {
         fullName: 'Priya Rao',
         email: 'priya.rao@resumegemini.com',
@@ -73,6 +73,29 @@ const initialResumeState = {
     fontSize: 'text-base',
 };
 
+const emptyResumeState = {
+    personal: {
+        fullName: '',
+        email: '',
+        phone: '',
+        role: '',
+        summary: '',
+        location: '',
+        photo: '',
+    },
+    education: [],
+    experience: [],
+    projects: [],
+    achievements: [],
+    extras: [],
+    extrasTitle: 'Languages',
+    skills: [],
+    themeColor: '#2563eb',
+    theme: 'modern',
+    fontFamily: 'font-sans',
+    fontSize: 'text-base',
+};
+
 // Helper to generate IDs safely (works on mobile/http)
 const generateId = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -94,25 +117,19 @@ export const useResume = () => {
 export const ResumeProvider = ({ children }) => {
     const [resumeData, setResumeData] = useState(() => {
         const saved = localStorage.getItem('resumeData');
-        if (!saved) return initialResumeState;
+        if (!saved) return sampleResumeData;
 
         try {
             const parsed = JSON.parse(saved);
-            // Deep merge with initial state to ensure all fields exist
+            // Deep merge with sample elements if missing, but otherwise trust parsed
             return {
-                ...initialResumeState,
+                ...emptyResumeState,
                 ...parsed,
-                personal: { ...initialResumeState.personal, ...parsed.personal },
-                education: parsed.education || initialResumeState.education,
-                experience: parsed.experience || initialResumeState.experience,
-                projects: parsed.projects || initialResumeState.projects,
-                achievements: parsed.achievements || initialResumeState.achievements,
-                extras: parsed.extras || initialResumeState.extras,
-                skills: parsed.skills || initialResumeState.skills,
+                personal: { ...emptyResumeState.personal, ...parsed.personal },
             };
         } catch (e) {
             console.error("Failed to parse resume data", e);
-            return initialResumeState;
+            return sampleResumeData;
         }
     });
 
@@ -306,10 +323,14 @@ export const ResumeProvider = ({ children }) => {
     };
 
     const clearResume = () => {
-        setResumeData(initialResumeState);
+        setResumeData(emptyResumeState);
         setCurrentResumeId(null);
         setResumeTitle('My Resume');
         localStorage.removeItem('currentResumeId');
+    };
+
+    const fillSampleData = () => {
+        setResumeData(sampleResumeData);
     };
 
 
@@ -354,6 +375,7 @@ export const ResumeProvider = ({ children }) => {
             updateExtra,
             removeExtra,
             updateExtrasTitle,
+            fillSampleData,
 
             updateFontFamily: (font) => setResumeData(prev => ({ ...prev, fontFamily: font })),
             updateFontSize: (size) => setResumeData(prev => ({ ...prev, fontSize: size })),
