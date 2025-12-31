@@ -1,4 +1,5 @@
 import React from 'react';
+import { useResume } from '../../context/ResumeContext';
 import { PersonalForm } from './PersonalForm';
 import { EducationForm } from './EducationForm';
 import { ExperienceForm } from './ExperienceForm';
