@@ -22,7 +22,7 @@ import { UserDashboard } from './components/user/UserDashboard'; // Imported
 // import { ProtectedRoute } from './components/auth/ProtectedRoute'; // Removed
 // import { AdminRoute } from './components/auth/AdminRoute'; // Removed
 import { API_URL } from './services/api';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 import { SEO } from './components/common/SEO';
 
