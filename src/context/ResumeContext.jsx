@@ -61,9 +61,9 @@ const sampleResumeData = {
         { id: '3', title: 'Growth Mindset Pioneer Award, 2017', description: '' }
     ],
     extras: [
-        { id: '1', text: 'English', type: 'languages' },
-        { id: '2', text: 'Telugu', type: 'languages' },
-        { id: '3', text: 'Hindi', type: 'languages' }
+        { id: '1', text: 'telugu', type: 'languages' },
+        { id: '2', text: 'hindi', type: 'languages' },
+        { id: '3', text: 'english', type: 'languages' }
     ],
     extrasTitle: 'Languages',
     skills: [
