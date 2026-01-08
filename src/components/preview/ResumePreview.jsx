@@ -28,11 +28,22 @@ export const ResumePreview = forwardRef((props, ref) => {
 
     // Digital Mode Classes
     const webClasses = "w-full mx-auto space-y-8 p-8 animate-fade-in";
-    // Modified: Remove hardcoded scale classes if we have a dynamic scale
-    // Base classes without scale:
-    const pdfBaseClasses = "bg-white p-[10mm] shadow-2xl mx-auto min-h-[297mm] w-[210mm] origin-top transition-transform text-gray-900";
 
-    // If scale is provided, use it. Otherwise fallback to responsive defaults.
+    // PDF Mode Classes
+    // When generating (scale === 1), we remove shadow and margins to ensure 1:1 capture without shrinking
+    // We also use specific A4 pixel dimensions (approx 794px x 1123px @ 96DPI) for better stability than 'mm' in some browsers
+    const isGenerating = scale === 1;
+
+    const pdfBaseClasses = clsx(
+        "bg-white text-gray-900 origin-top pt-[6mm] px-[6mm] pb-[5mm]", // Top padding prevents clipping, small side padding minimizes gaps
+        // Only apply shadow and centering when NOT generating
+        !isGenerating && "shadow-2xl mx-auto transition-transform",
+        // Strict dimensions: Fixed Height 295mm (A4 is 297mm) to guarantee 1 page
+        "w-[210mm] h-[295mm] shrink-0 overflow-hidden"
+    );
+
+    // If scale is provided and NOT 1 (i.e. preview zoom), apply it. 
+    // If scale is 1, we rely on the container to hold the 210mm document naturally.
     const pdfClasses = scale
         ? pdfBaseClasses
         : `${pdfBaseClasses} scale-[0.6] sm:scale-[0.8] md:scale-100`;
@@ -45,7 +56,9 @@ export const ResumePreview = forwardRef((props, ref) => {
                 ref={ref}
                 className={clsx(isWeb ? "w-full mx-auto animate-fade-in" : pdfClasses, "bg-white text-gray-800")}
                 id="resume-preview"
-                style={!isWeb && scale ? { transform: `scale(${scale})` } : {}}
+                // Only apply transform if we are PREVIEWING (scale != 1). 
+                // During generation (scale == 1), we want natural layout.
+                style={!isWeb && scale && scale !== 1 ? { transform: `scale(${scale})` } : {}}
             >
                 {/* For Geometric, we override the standard padding container because it has full width elements */}
                 <GeometricTemplate isWeb={isWeb} isEditable={isEditable} theme={theme} sectionOrder={sectionOrder} />
@@ -62,10 +75,10 @@ export const ResumePreview = forwardRef((props, ref) => {
             className={clsx(
                 isWeb ? webClasses : pdfClasses,
                 !isWeb && computedClass,
-                isWeb && !isSidebar && "text-slate-200" // Only apply light text for Standard/Dark web themes, not the white-paper ones
+                isWeb && !isSidebar && "text-slate-200"
             )}
             id="resume-preview"
-            style={!isWeb && scale ? { transform: `scale(${scale})` } : {}}
+            style={!isWeb && scale && scale !== 1 ? { transform: `scale(${scale})` } : {}}
         >
             {isSidebar ? (
                 <SidebarTemplate isWeb={isWeb} isEditable={isEditable} theme={theme} sectionOrder={sectionOrder} />

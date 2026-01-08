@@ -144,7 +144,7 @@ export function Header({ onDownload, isGenerating }) {
                         ) : (
                             <>
                                 <Download className="w-4 h-4" />
-                                <span className="hidden md:inline">Export Portfolio</span>
+                                <span className="hidden md:inline">Preview</span>
                             </>
                         )}
                     </Button>
@@ -155,7 +155,7 @@ export function Header({ onDownload, isGenerating }) {
 }
 
 function SaveButton() {
-    const { saveResumeToBackend, updateResumeInBackend, currentResumeId, resumeTitle, setResumeTitle } = useResume();
+    const { saveResumeToBackend, updateResumeInBackend, currentResumeId, resumeTitle, setResumeTitle, getUserResumes } = useResume();
     const navigate = useNavigate();
 
     const [saving, setSaving] = React.useState(false);
@@ -184,14 +184,39 @@ function SaveButton() {
     }, [savedSuccess]);
 
     const handleConfirmSave = async (newTitle) => {
-        setIsSaveModalOpen(false);
-        // Update title in context immediately so UI reflects it
-        if (newTitle) setResumeTitle(newTitle);
-
         const finalTitle = newTitle || resumeTitle;
 
         setSaving(true);
         try {
+            // Check for duplicates
+            const allResumes = await getUserResumes();
+            const normalize = (str) => str?.toLowerCase().trim();
+
+            const existing = allResumes.find(r => normalize(r.title) === normalize(finalTitle));
+
+            // Logic: 
+            // 1. If existing found AND we aim to CREATE new (currentResumeId is null) -> Conflict. 
+            // 2. If existing found AND we aim to UDPATE (currentResumeId is set) AND existing ID !== currentResumeId -> Conflict (renaming to someone else's name).
+
+            if (existing) {
+                const isConflict = !currentResumeId || (currentResumeId && existing._id !== currentResumeId && existing.id !== currentResumeId);
+                if (isConflict) {
+                    toast.error(`A resume named "${finalTitle}" already exists! Please choose a different name.`);
+                    setSaving(false);
+                    // Re-open modal or keep it open? logic closes it before calling confirm. 
+                    // We need to re-open it or handle this better. 
+                    // Since setIsSaveModalOpen(false) was called by Modal internally/wrapper? No, called in this function in previous code.
+                    // I should call setIsSaveModalOpen(true) again? Or just prevent closing? 
+                    // The modal prop `onConfirm` usually implies the modal is closing. I'll just show toast.
+                    return;
+                }
+            }
+
+            setIsSaveModalOpen(false);
+
+            // Update title context if valid
+            if (newTitle) setResumeTitle(newTitle);
+
             console.log("Saving resume with title:", finalTitle, "ID:", currentResumeId);
             if (currentResumeId) {
                 await updateResumeInBackend(currentResumeId, finalTitle);

@@ -3,8 +3,9 @@ import { useResume } from '../../context/ResumeContext';
 
 export function AchievementsSection({ isWeb }) {
     const { resumeData } = useResume();
-    const { achievements, themeColor } = resumeData;
+    const { achievements, themeColor, sectionVisibility } = resumeData;
 
+    if (sectionVisibility?.achievements === false) return null;
     if (!achievements || achievements.length === 0) return null;
 
     const textColor = isWeb ? "text-slate-300" : "text-gray-700";

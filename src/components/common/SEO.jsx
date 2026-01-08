@@ -13,6 +13,7 @@ export function SEO({ title, description, keywords, image }) {
             <title>{fullTitle}</title>
             <meta name="description" content={description || defaultDescription} />
             {keywords && <meta name="keywords" content={keywords} />}
+            <meta name="google-site-verification" content="GXttG2QSNxi9KOtmA7HE32Y51djbjpzFcjbtsW9-b58" />
 
             {/* Open Graph / Facebook */}
             <meta property="og:type" content="website" />

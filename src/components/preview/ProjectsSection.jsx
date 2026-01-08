@@ -3,8 +3,9 @@ import { useResume } from '../../context/ResumeContext';
 
 export function ProjectsSection({ isWeb }) {
     const { resumeData } = useResume();
-    const { projects, themeColor } = resumeData;
+    const { projects, themeColor, sectionVisibility } = resumeData;
 
+    if (sectionVisibility?.projects === false) return null;
     if (!projects || projects.length === 0) return null;
 
     const textColor = isWeb ? "text-slate-200" : "text-gray-900";

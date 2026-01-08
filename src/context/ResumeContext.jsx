@@ -27,6 +27,7 @@ const sampleResumeData = {
             company: 'Tech Innovations Labs',
             role: 'Product Manager',
             date: '2024 - Present',
+            location: 'San Francisco, CA',
             description: '• Spearheaded the redesign of the core flagship product, resulting in a 25% increase in user retention.\n• Managed a team of 5 designers, establishing a new design system used across 3 interconnected products.\n• Collaborated closely with engineering and product management to define product roadmap and vision.'
         },
         {
@@ -34,6 +35,7 @@ const sampleResumeData = {
             company: 'Digital Solutions Corp',
             role: 'Senior Developer',
             date: '2021 - 2024',
+            location: 'Austin, TX',
             description: '• Designed and launched mobile-first interfaces for fintech applications.\n• Conducted user research and usability testing sessions to validate design concepts.\n• Reduced customer support tickets by 15% through intuitive UI improvements.'
         }
     ],
@@ -65,17 +67,34 @@ const sampleResumeData = {
     ],
     extrasTitle: 'Languages',
     skills: [
-        'Java', 'Python', 'HTML', 'CSS', 'JavaScript', 'React'
+        { id: '1', name: 'Frontend', items: ['React', 'HTML', 'CSS', 'Tailwind', 'JavaScript'] },
+        { id: '2', name: 'Backend', items: ['Node.js', 'Python', 'PostgreSQL', 'MongoDB'] },
+        { id: '3', name: 'Tools', items: ['Git', 'Docker', 'AWS', 'Jira'] }
     ],
+    skillsViewMode: 'categorized', // 'categorized' | 'list'
+    skillsLayout: 'row', // 'row' | 'column' (for categorized view) OR 'grid' | 'list' (for list view)
     themeColor: '#2563eb', // blue-600
     theme: 'modern',
     fontFamily: 'font-sans',
     fontSize: 'text-base',
+    experienceType: 'experienced', // 'experienced' | 'fresher'
+    experienceTitle: 'Experience',
+    fresherSummary: '',
+    sectionVisibility: {
+        personal: true,
+        education: true,
+        experience: true,
+        projects: true,
+        achievements: true,
+        skills: true,
+        languages: true,
+    },
 };
 
 const emptyResumeState = {
     personal: {
-        fullName: '',
+        firstName: '',
+        lastName: '',
         email: '',
         phone: '',
         role: '',
@@ -90,10 +109,24 @@ const emptyResumeState = {
     extras: [],
     extrasTitle: 'Languages',
     skills: [],
+    skillsViewMode: 'categorized',
+    skillsLayout: 'row',
     themeColor: '#2563eb',
     theme: 'modern',
     fontFamily: 'font-sans',
     fontSize: 'text-base',
+    experienceType: 'experienced',
+    experienceTitle: 'Experience',
+    fresherSummary: '',
+    sectionVisibility: {
+        personal: true,
+        education: true,
+        experience: true,
+        projects: true,
+        achievements: true,
+        skills: true,
+        languages: true,
+    },
 };
 
 // Helper to generate IDs safely (works on mobile/http)
@@ -162,6 +195,9 @@ export const ResumeProvider = ({ children }) => {
     // Global Modal State
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Page Limit State
+    const [isOverOnePage, setIsOverOnePage] = useState(false);
 
     useEffect(() => {
         if (currentResumeId) {
@@ -361,6 +397,36 @@ export const ResumeProvider = ({ children }) => {
             updateExperience,
             removeExperience,
             updateSkills,
+
+            // Skills Categories
+            addSkillGroup: () => setResumeData(prev => ({
+                ...prev,
+                skills: [...(Array.isArray(prev.skills) && prev.skills.every(s => typeof s === 'string')
+                    ? [{ id: generateId(), name: 'General', items: prev.skills }] // Migrate legacy
+                    : (prev.skills || [])),
+                { id: generateId(), name: 'New Category', items: [] }]
+            })),
+            updateSkillGroup: (id, name) => setResumeData(prev => ({
+                ...prev,
+                skills: prev.skills.map(grp => grp.id === id ? { ...grp, name } : grp)
+            })),
+            removeSkillGroup: (id) => setResumeData(prev => ({
+                ...prev,
+                skills: prev.skills.filter(grp => grp.id !== id)
+            })),
+            addSkillToGroup: (groupId) => setResumeData(prev => ({
+                ...prev,
+                skills: prev.skills.map(grp => grp.id === groupId ? { ...grp, items: [...grp.items, ''] } : grp)
+            })),
+            updateSkillInGroup: (groupId, index, value) => setResumeData(prev => ({
+                ...prev,
+                skills: prev.skills.map(grp => grp.id === groupId ? { ...grp, items: grp.items.map((item, i) => i === index ? value : item) } : grp)
+            })),
+            removeSkillFromGroup: (groupId, index) => setResumeData(prev => ({
+                ...prev,
+                skills: prev.skills.map(grp => grp.id === groupId ? { ...grp, items: grp.items.filter((_, i) => i !== index) } : grp)
+            })),
+
             updateTheme,
             updateThemeColor,
             reorderSection,
@@ -377,10 +443,28 @@ export const ResumeProvider = ({ children }) => {
             updateExtrasTitle,
             fillSampleData,
 
+            updateExperienceType: (type) => setResumeData(prev => ({ ...prev, experienceType: type })),
+            updateExperienceTitle: (title) => setResumeData(prev => ({ ...prev, experienceTitle: title })),
+            updateFresherSummary: (text) => setResumeData(prev => ({ ...prev, fresherSummary: text })),
+            updateSkillsViewMode: (mode) => setResumeData(prev => ({ ...prev, skillsViewMode: mode })),
+            updateSkillsLayout: (layout) => setResumeData(prev => ({ ...prev, skillsLayout: layout })),
+            updateSectionVisibility: (section, isVisible) => setResumeData(prev => ({
+                ...prev,
+                sectionVisibility: { ...prev.sectionVisibility, [section]: isVisible }
+            })),
+
             updateFontFamily: (font) => setResumeData(prev => ({ ...prev, fontFamily: font })),
             updateFontSize: (size) => setResumeData(prev => ({ ...prev, fontSize: size })),
 
             // Backend Integration
+            getUserResumes: async () => {
+                try {
+                    return await resumeService.getUserResumes();
+                } catch (error) {
+                    console.error("Context: Error fetching resumes", error);
+                    throw error;
+                }
+            },
             saveResumeToBackend: async (title) => {
                 try {
                     console.log("Context: Saving new resume with title:", title);
@@ -424,8 +508,12 @@ export const ResumeProvider = ({ children }) => {
             setResumeTitle,
             showPaymentModal,
             setShowPaymentModal,
+            showPaymentModal,
+            setShowPaymentModal,
             isGenerating,
-            setIsGenerating
+            setIsGenerating,
+            isOverOnePage,
+            setIsOverOnePage
         }}>
             {children}
         </ResumeContext.Provider>

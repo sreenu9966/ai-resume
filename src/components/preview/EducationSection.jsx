@@ -3,8 +3,9 @@ import { useResume } from '../../context/ResumeContext';
 
 export function EducationSection({ isWeb }) {
     const { resumeData } = useResume();
-    const { education, themeColor } = resumeData;
+    const { education, themeColor, sectionVisibility } = resumeData;
 
+    if (sectionVisibility?.education === false) return null;
     if (!education || education.length === 0) return null;
 
     const textColor = isWeb ? "text-slate-200" : "text-gray-900";

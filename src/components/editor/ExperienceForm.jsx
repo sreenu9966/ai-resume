@@ -3,110 +3,190 @@ import { useResume } from '../../context/ResumeContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
-import { enhanceTextWithGemini } from '../../services/gemini';
+import { Plus, Trash2 } from 'lucide-react';
 
 export function ExperienceForm() {
-  const { resumeData, addExperience, updateExperience, removeExperience, setShowPaymentModal } = useResume();
+  const {
+    resumeData,
+    addExperience,
+    updateExperience,
+    removeExperience,
+    setShowPaymentModal,
+    updateExperienceType,
+    updateExperienceTitle,
+    updateFresherSummary
+  } = useResume();
+
+  // Default to 'experienced' if undefined (backward compatibility)
+  const experienceType = resumeData.experienceType || 'experienced';
+  const experienceTitle = resumeData.experienceTitle || 'Experience';
+  const fresherSummary = resumeData.fresherSummary || '';
   const { experience } = resumeData;
-  const [enhancingId, setEnhancingId] = useState(null);
-
-  const handleEnhance = async (id, currentText) => {
-    if (!currentText) return;
-
-    // Subscription Check
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const isSubscribed = user.isSubscribed;
-
-    if (!isSubscribed) {
-      setShowPaymentModal(true);
-      return;
-    }
-
-    setEnhancingId(id);
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const enhancedText = await enhanceTextWithGemini(currentText, 'experience', apiKey);
-      updateExperience(id, 'description', enhancedText);
-    } catch (error) {
-      console.error("Failed to enhance experience", error);
-    } finally {
-      setEnhancingId(null);
-    }
-  };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-100">Experience</h3>
-        <Button onClick={addExperience} variant="primary" size="sm" className="gap-1">
-          <Plus className="w-4 h-4" /> Add
-        </Button>
+    <Card className="p-6 transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <Input
+              value={experienceTitle}
+              onChange={(e) => updateExperienceTitle(e.target.value)}
+              className="text-xl font-bold text-white tracking-tight bg-transparent border-none p-0 focus:ring-0 w-auto min-w-[120px] placeholder:text-slate-500 focus:bg-transparent"
+              placeholder="Section Title"
+            />
+            <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-indigo-500/30 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+            <span className="absolute -top-3 left-0 text-[10px] text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Edit Title</span>
+          </div>
+
+          <div className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-medium border border-indigo-500/30">
+            {experienceType === 'experienced' ? 'Pro' : 'Entry Level'}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Premium Toggle Switch */}
+          {/* Fresher Mode Toggle */}
+          <button
+            onClick={() => updateExperienceType(experienceType === 'experienced' ? 'fresher' : 'experienced')}
+            className={`
+              relative flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              ${experienceType === 'fresher'
+                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-300 border border-white/5'}
+            `}
+          >
+            <span className={`w-2 h-2 rounded-full transition-colors ${experienceType === 'fresher' ? 'bg-white' : 'bg-slate-500'}`} />
+            {experienceType === 'experienced' ? 'Fresher' : 'Experienced'}
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {experience.map((exp) => (
-          <div key={exp.id} className="p-4 border border-white/10 rounded-lg space-y-3 bg-white/5">
-            <div className="grid grid-cols-2 gap-3 mb-2">
-              <Input
-                placeholder="Job Title"
-                value={exp.role}
-                onChange={(e) => updateExperience(exp.id, 'role', e.target.value)}
-              />
-              <Input
-                placeholder="Company"
-                value={exp.company}
-                onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
-              />
-              <Input
-                placeholder="Duration"
-                value={exp.duration}
-                onChange={(e) => updateExperience(exp.id, 'duration', e.target.value)}
-              />
+      {experienceType === 'experienced' ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex justify-between items-center px-1">
+            <p className="text-sm text-slate-400">Add your past work history.</p>
+            <Button onClick={addExperience} variant="primary" size="sm" className="gap-2 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all">
+              <Plus className="w-4 h-4" /> Add Role
+            </Button>
+          </div>
 
-              <div className="flex justify-end pt-1">
+          {experience.map((exp, index) => (
+            <div key={exp.id} className="group p-5 border border-white/5 rounded-xl space-y-4 bg-gradient-to-br from-white/5 to-white/[0.02] hover:border-white/10 transition-all">
+              <div className="flex justify-between items-start">
+                <div className="text-xs font-medium text-indigo-400 mb-2 uppercase tracking-wider">Role {index + 1}</div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeExperience(exp.id)}
-                  className="text-red-400 hover:bg-red-500/10"
+                  className="text-slate-500 hover:text-red-400 hover:bg-red-500/10 -mt-2 -mr-2 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-400">Job Title</label>
+                  <Input
+                    placeholder="e.g. Senior Product Designer"
+                    value={exp.role}
+                    onChange={(e) => updateExperience(exp.id, 'role', e.target.value)}
+                    className="bg-black/20 focus:bg-black/40 border-white/5 focus:border-indigo-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-400">Company Name</label>
+                  <Input
+                    placeholder="e.g. Google"
+                    value={exp.company}
+                    onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
+                    className="bg-black/20 focus:bg-black/40 border-white/5 focus:border-indigo-500/50 transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400">Location</label>
+                      <Input
+                        placeholder="e.g. New York, NY"
+                        value={exp.location || ''}
+                        onChange={(e) => updateExperience(exp.id, 'location', e.target.value)}
+                        className="bg-black/20 focus:bg-black/40 border-white/5 focus:border-indigo-500/50 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-400">Duration</label>
+                      <Input
+                        placeholder="e.g. Jan 2022 - Present"
+                        value={exp.date || ''}
+                        onChange={(e) => updateExperience(exp.id, 'date', e.target.value)}
+                        className="bg-black/20 focus:bg-black/40 border-white/5 focus:border-indigo-500/50 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-medium text-slate-400">Achievements & Responsibilities</label>
+                </div>
+                <textarea
+                  className="w-full rounded-xl bg-black/20 border border-white/10 focus:border-indigo-500/50 focus:bg-black/30 focus:ring-1 focus:ring-indigo-900/50 p-4 text-sm min-h-[120px] resize-y transition-all text-slate-200 placeholder:text-slate-600 leading-relaxed scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                  placeholder="• Led cross-functional team of 5 developers&#10;• Increased system performance by 30%&#10;• Mentored junior developers..."
+                  value={exp.description}
+                  onChange={(e) => updateExperience(exp.id, 'description', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+          {experience.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-xl border-2 border-dashed border-white/10 bg-white/5">
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                <Plus className="w-5 h-5 text-slate-400" />
+              </div>
+              <h4 className="text-slate-200 font-medium mb-1">No Experience Added</h4>
+              <p className="text-slate-500 text-sm mb-4">Add your relevant work experience to stand out.</p>
+              <Button onClick={addExperience} variant="outline" size="sm">
+                Add Role
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="p-6 border border-indigo-500/20 rounded-xl bg-indigo-500/[0.02] space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <h4 className="text-base font-semibold text-white">Fresher Summary & Internships</h4>
+                <p className="text-xs text-indigo-300/80">Highlight your academic potential and early career steps.</p>
+              </div>
             </div>
 
             <div className="relative">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-medium text-slate-400">Description</label>
-                <button
-                  onClick={() => handleEnhance(exp.id, exp.description)}
-                  disabled={enhancingId === exp.id || !exp.description}
-                  className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
-                >
-                  {enhancingId === exp.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3" />
-                  )}
-                  {enhancingId === exp.id ? 'Enhancing...' : 'Enhance with AI'}
-                </button>
-              </div>
               <textarea
-                className="w-full rounded-lg glass-input px-3 py-2 text-sm h-24 resize-none"
-                placeholder="Job Description / Achievements"
-                value={exp.description}
-                onChange={(e) => updateExperience(exp.id, 'description', e.target.value)}
+                className="w-full rounded-xl bg-black/20 border border-white/10 focus:border-indigo-500/50 focus:bg-black/30 focus:ring-1 focus:ring-indigo-900/50 p-5 text-sm min-h-[200px] resize-none transition-all text-slate-200 placeholder:text-slate-600 leading-7"
+                placeholder="I am a motivated Graduate with a strong foundation in..."
+                value={fresherSummary}
+                onChange={(e) => updateFresherSummary(e.target.value)}
               />
+              {/* Decorative gradient corner */}
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-tr-xl pointer-events-none" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="p-3 rounded-lg bg-white/5 border border-white/5">
+                <h5 className="text-xs font-semibold text-indigo-300 mb-1">💡 What to include?</h5>
+                <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                  <li>Degree & CGPA (if high)</li>
+                  <li>Key projects & technologies</li>
+                  <li>Internships & roles</li>
+                </ul>
+              </div>
             </div>
           </div>
-        ))}
-        {experience.length === 0 && (
-          <div className="text-center py-6 text-slate-400 bg-white/5 rounded-lg border border-dashed border-white/10">
-            No experience entries yet. Click "Add" to start.
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </Card>
   );
 }

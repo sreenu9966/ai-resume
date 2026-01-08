@@ -12,7 +12,9 @@ export function ProjectsForm() {
     return (
         <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-100">Projects</h3>
+                <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-slate-100">Projects</h3>
+                </div>
                 <Button onClick={addProject} variant="primary" size="sm" className="gap-1">
                     <Plus className="w-4 h-4" /> Add
                 </Button>

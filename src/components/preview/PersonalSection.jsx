@@ -5,7 +5,9 @@ import './personal.css';
 
 export function PersonalSection({ isWeb, theme }) {
     const { resumeData, updatePersonal } = useResume();
-    const { personal, themeColor } = resumeData;
+    const { personal, themeColor, sectionVisibility } = resumeData;
+
+    if (sectionVisibility?.personal === false) return null;
 
     const isCentered = theme === 'classic' || theme === 'elegant';
     const containerClass = isCentered ? "text-center" : "text-left";
@@ -23,6 +25,8 @@ export function PersonalSection({ isWeb, theme }) {
                     <img
                         src={personal.photo}
                         alt={personal.fullName}
+                        crossOrigin="anonymous"
+                        loading="eager"
                         className={`w-24 h-24 rounded-full object-cover border-4 ${isWeb ? 'border-white/10' : 'border-gray-200'}`}
                     />
                 </div>

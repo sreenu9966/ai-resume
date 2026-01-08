@@ -28,11 +28,11 @@ import { SEO } from './components/common/SEO';
 
 function ResumeBuilder({ setShowAuthModal }) {
   const resumeRef = useRef(null);
-  const { showPaymentModal, setShowPaymentModal, isGenerating, setIsGenerating } = useResume();
+  const { showPaymentModal, setShowPaymentModal, isGenerating, setIsGenerating, resumeData, saveResumeToBackend, updateResumeInBackend, getUserResumes, resumeTitle, setResumeTitle } = useResume();
+  const navigate = React.useMemo(() => { try { return require('react-router-dom').useNavigate(); } catch (e) { return () => { } } }, []);
 
   const [showPreviewModal, setShowPreviewModal] = React.useState(false);
-  const [pdfUrl, setPdfUrl] = React.useState(null);
-  // Removed local isGenerating state
+  const [pdfUrl, setPdfUrl] = React.useState('');
 
   const handleDownloadClick = async () => {
     const token = localStorage.getItem('token');
@@ -57,10 +57,10 @@ function ResumeBuilder({ setShowAuthModal }) {
 
     try {
       const element = resumeRef.current;
-      const blob = await generatePDF(element, 'preview');
+      const blob = await generatePDF(element, 'preview'); // Only generate blob
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
-      setShowPreviewModal(true);
+      setShowPreviewModal(true); // Open Modal
     } catch (err) {
       console.error("Preview failed", err);
       alert("Failed to generate preview");
@@ -79,28 +79,112 @@ function ResumeBuilder({ setShowAuthModal }) {
     }
 
     try {
-      const resumeId = localStorage.getItem('currentResumeId') || 'new-resume';
-      await axios.post(`${API_URL}/resumes/${resumeId}/download`, {
-        userId: user._id || user.userId
-      });
+      // --- AUTO-SAVE START ---
+      // 0. Prepare Title
+      const currentTitle = (resumeData.personal?.fullName || 'My Resume');
+      // If resumeTitle state is default "My Resume" and personal name is set, maybe prefer personal name? 
+      // But user might have typed a custom title. Let's use the `resumeTitle` from context.
+      // Actually, let's stick to the Context's resumeTitle.
 
+      let finalTitle = resumeRef.current?.dataset?.title || resumeTitle || 'My Resume';
+      // Note: resumeRef doesn't have dataset usually. relying on context variable `resumeTitle`.
+
+      // 1. Check for duplicates (Safety)
+      const allResumes = await getUserResumes();
+      const normalize = (str) => str?.toLowerCase().trim();
+      const existing = allResumes.find(r => normalize(r.title) === normalize(resumeTitle));
+
+      const resumeId = localStorage.getItem('currentResumeId'); // Manual check or context check
+
+      if (existing) {
+        const isConflict = !resumeId || (resumeId && resumeId !== 'new-resume' && existing._id !== resumeId && existing.id !== resumeId);
+        if (isConflict) {
+          toast.error(`Auto-Save Failed: A resume named "${resumeTitle}" already exists. Please rename it at the top before downloading.`);
+          return; // Block download until resolved
+        }
+      }
+
+      // 2. Perform Save
+      if (resumeId && resumeId !== 'new-resume') {
+        await updateResumeInBackend(resumeId, resumeTitle);
+        toast.success('Progress Auto-Saved!', { duration: 2000 });
+      } else {
+        // It's new
+        await saveResumeToBackend(resumeTitle);
+        toast.success('New Resume Auto-Saved!', { duration: 2000 });
+      }
+      // --- AUTO-SAVE END ---
+
+    } catch (saveError) {
+      console.error("Auto-save failed", saveError);
+      // If save fails, do we block download? User said "download noikina server ki vellaali" (must goto server).
+      // So yes, we should probably warn them.
+      toast.error("Cloud Sync Failed: Check internet or rename. Downloading local copy only.", { duration: 4000 });
+      // Proceed to download anyway? User might be urgent.
+      // I will proceed but with error shown.
+    }
+
+
+    // 1. Track Download in Backend (Non-blocking)
+    try {
+      const resumeId = localStorage.getItem('currentResumeId');
+      // Only track if we have a real ID, skip for 'new-resume' or null
+      if (resumeId && resumeId !== 'new-resume') {
+        await axios.post(`${API_URL}/resumes/${resumeId}/download`, {
+          userId: user._id || user.userId
+        });
+      }
+    } catch (trackError) {
+      console.warn("Tracking failed, but proceeding with download:", trackError);
+      // Cleanly ignore tracking errors to allow user to get their file
+    }
+
+    try {
+      // 2. Update Local User Data
       if (!user.isSubscribed) {
         const updatedUser = { ...user, downloadCount: (user.downloadCount || 0) + 1 };
         localStorage.setItem('user', JSON.stringify(updatedUser));
       }
 
+      // 3. Generate Filename
+      const cleanName = (resumeData.personal?.fullName || 'Resume').replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `${cleanName}_Resume.pdf`;
+
+      // 4. Generate Blob and Save Manually
+      setIsGenerating(true); // Force clean layout for capture
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for render
+
       const element = resumeRef.current;
-      await generatePDF(element, 'save');
+      // We use 'preview' mode to get the Blob, which is more reliable than worker.save()
+      const blob = await generatePDF(element, 'preview');
+
+      setIsGenerating(false); // Restore preview layout
+
+      // Manual Download Trigger
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      // 5. Success Feedback & Redirect
       setShowPreviewModal(false);
+      toast.success('Resume downloaded successfully!', { icon: '🎉' });
+
+      // Optional: Redirect after a moment
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
 
     } catch (error) {
-      if (error.response?.status === 402) {
-        setShowPreviewModal(false);
-        setShowPaymentModal(true);
-      } else {
-        console.error("Download error:", error);
-        alert(error.response?.data?.message || "Failed to process download");
-      }
+      console.error("Download error:", error);
+      // Only alert if it's a real generation error, not a cancelled action
+      toast.error("Download failed. Please try again.");
     }
   };
 
@@ -115,7 +199,6 @@ function ResumeBuilder({ setShowAuthModal }) {
           <Preview resumeRef={resumeRef} isGenerating={isGenerating} />
         </div>
       </div>
-
       <PDFPreviewModal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}

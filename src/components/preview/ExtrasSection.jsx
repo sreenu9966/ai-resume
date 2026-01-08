@@ -34,13 +34,14 @@ export function ExtrasSection({ isWeb }) {
                 )}
 
                 {normalExtras.length > 0 && (
-                    <ul className={`list-disc list-inside space-y-1 text-sm ${textColor}`}>
+                    <div className="flex flex-col gap-1">
                         {normalExtras.map((item) => (
-                            <li key={item.id} className="marker:text-gray-400">
-                                {item.text}
-                            </li>
+                            <div key={item.id} className={`text-sm leading-snug flex items-start gap-2 ${textColor}`}>
+                                <span>&#8226;</span>
+                                <span>{item.text}</span>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 )}
             </div>
         </div>
